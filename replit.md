@@ -1,6 +1,6 @@
-# [Project name]
+# Pekuti Youth App
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A mobile app for Ruwa City Youth (Zimbabwe) — daily devotions, anonymous community chat, private Q&A with Pastor, prayer room, and gospel music, all with Shona/English toggle.
 
 ## Run & Operate
 
@@ -30,7 +30,14 @@ _Populate as you build — non-obvious choices a reader couldn't infer from the 
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+**Pekuti** — "church in your pocket" for Ruwa City Youth, Harare. Navy + Gold theme, Shona/English toggle throughout.
+
+- **Home** — Dashboard with today's verse, streak counter, quick-access grid, upcoming service RSVP
+- **Pekuti (Devotion)** — Daily Shona/English devotion with streak tracking and day selector
+- **Imba / Bvunza** — Anonymous group chat (Imba Yokutaura) + private Q&A with Pastor (Bvunza)
+- **Prayer Room (Namata)** — Daily prayer focus + anonymous prayer requests with heart button
+- **Gospel Music (Nziyo)** — Admin-curated playlists with mini player
+- **Admin Panel** — Questions queue, devotion management, prayer focus, chat moderation (password protected, route guarded)
 
 ## User preferences
 

@@ -1,0 +1,376 @@
+help put these ideas into motion for building a software application to be used by youths at church for services, devotions, a private room for questions and answering  and many moreI see it 🔥 You guys from *Ruwa City Digital Pla...* are already vibing on this. Let's put it into motion.
+
+Kuda is right: start with devotions + extend later. Muchineuta is also right: youth won’t use it if it’s just 1 feature + needs to be mobile-first. And that “Ask any Bible Question & Get an Answer” idea is the killer feature 👌
+
+### *1. The Problem You’re Solving* 
+From your chat:
+1. *Youth don’t have a personal, safe space* for spiritual growth outside Sunday. 
+2. *Generic Bible apps are too broad* — nothing feels like “Ruwa Youth”. 
+3. *Shy youth have questions* they can’t ask in front of everyone: social, spiritual, even economical.
+
+So: *Build “your church in your pocket” for Ruwa Youths*
+
+### *2. MVP v1.0: 4 Core Features to Launch With* 
+You said “at least 3-4 features apa” — this combo makes it attractive from day 1:
+**Feature**	**What it does**	**Why youth will use it**
+**1. Daily Devotion: "Pekuti Pane Devotion"**	60-90 sec devotional in English + Shona. Bible verse + 2-line reflection + 1 action point.	Daily habit. Not a long Bible study. Push notification: `Pekuti nhasi?`
+**2. Ask Room: "Bvunza & Upindure"**	Private 1-on-1 chat with a vetted youth mentor/pastor. Anonymous option.	Safe space for real questions: faith, dating, school, money. No judgment.
+**3. Youth Services Hub**	Next youth service, time, venue in Harare, theme, speaker. RSVP button. Sermon notes after.	Kills “youth iripi nhasi?” confusion.
+**4. Faith Streak + Community**	Track devo streaks 🔥. Prayer wall: post anonymous requests + others can tap “Ndiri Kukunamatira 🙏”	Gamification + community without pressure.
+*Phase 2 later*: Events sign-up, Serve team slots, Testimonies, Gospel playlist, Camp countdown.
+
+### *3. How to Be Unique vs Other Bible Apps*
+Muchineuta asked the right question. Here’s the answer:
+1. *Hyper-local*: Everything in Shona + English. Verses + devotion examples using Ruwa/Harare life. 
+2. *Human mentors, not just AI*: The “Ask Room” connects to real people from your church. AI can only draft answers for mentors to approve.
+3. *Church-branded*: Logo, colors, youth pastor’s voice. It’s not YouVersion. It’s _Ruwa City Youth App_.
+4. *Data-light for ZW*: Compress images, offline devotions, WhatsApp login. No 100MB download.
+
+### *4. Build Plan: “Vibe Coding” It Fast* 
+Since you said “with vibe coding it wont take much time” — here’s the stack I’d use:
+
+*Tech Stack for Speed + Low Cost:*
+1. *Frontend*: Flutter or React Native → 1 app for Android + iOS. Looks native.
+2. *Backend*: Supabase or Firebase → Auth, database, push notifications, storage. No server to manage.
+3. *AI for Ask Room*: Use GPT/Claude API, but with a guardrail: AI drafts → Mentor approves → Sent to youth. Avoids heresy risk.
+4. *No-code start*: You can vibe-code the MVP in Replit or FlutterFlow in ∼2 weeks to test with 20 youths first.
+
+### *5. Next 3 Steps To Put It Into Motion This Week*
+1. *Name + Scope*: Pick a name. Ex: `RuwaYouth` or `Pekuti App`. Lock the 4 MVP features above. 
+2. *Content Team*: Assign 3 youths to write 30 devotions in Shona/English. Assign 2 mentors for Ask Room.
+3. *Vibe-code Prototype*: I can write you the first prompt right now to generate a working app prototype with: Login, Devotion card, Ask button, Services card.
+
+---
+
+*Question for you*: Do you want me to write that first vibe-coding prompt so you can paste it into Replit/Cursor and see the app in 5 mins? 
+
+If yes, tell me: *Flutter or React Native*? And do you want the Ask Room to be AI-first or Human-mentor-first for v1?Yesss 🔥 Now we’re cooking. You just added the 3 things that make youths actually _live_ in the app.
+
+So v1.2 = *Devotion + Chat + Q&A + Prayer + Music + Floating Verse*. Church in your pocket, for real.
+
+### *Updated App v1.2: Full Feature Map*
+
+#### *1. Prayer Room: "Imba Yokunamatira" 🙏* 
+*Goal*: Corporate prayer + personal requests, all in one place.
+*How it works:*
+1. *Daily Focus*: Admins post 1-3 "Zvatinonamata Nhasi" at the top. Ex: `Nhasi: MaExam eForm 4, Runyararo muRuwa, Vechidiki vakarasika`
+2. *Youth Requests*: Big button `Tumira Chikumbiro Chako`. Anonymous. Shows as cards: `Anonymous: "Please pray for my mom’s health 🙏"` 
+3. *Community Pray*: Every card has `Ndiri Kukunamatira ❤️` button + count. No comments = no drama. Just prayer.
+4. *Answered Wall*: Pastor can mark requests `Apindurwa 🙌`. Builds faith.
+
+#### *2. Music Section: "Nziyo dzaMwari" 🎵* 
+*Goal*: Keep youths worshipping outside church.
+*How it works:*
+1. *Admin Upload Only*: Pastor/Admin uploads MP3s or links YouTube Gospel songs in Admin Panel. No youth uploads = no copyright/dirty music risk.
+2. *Playlists*: `Ruwa Youth Worship`, `Shona Gospel Hits`, `Quiet Time`. 
+3. *Offline Mode*: Download 5 songs for data-saving. Big deal for Zim youths.
+4. *Lyrics Toggle*: Show Shona/English lyrics while playing if admin adds them.
+
+#### *3. Footer: Floating Daily Verse* 
+*Goal*: Scripture everywhere, no matter where you are in the app.
+*How it works:*
+1. *Sticky Bar*: Thin bar at bottom of every screen: `Pekuti Nhasi: "Ndinogona zvose..." Phil 4:13` 
+2. *Tap to Expand*: Tap it → pops up full devotion for the day + "Share Verse" button for WhatsApp Status.
+3. *Auto Updates*: Pulled from the same Admin Devotion you post at 5AM.
+
+### *Updated Bottom Nav: 6 Tabs*
+[Devotion] [Imba] [Bvunza] [Namata] [Nziyo] [Profile]
+1. *Devotion*: Pekuti yaNhasi + Streak 🔥
+2. *Imba*: Anonymous group chat `Imba Yokutaura`
+3. *Bvunza*: Private Q&A to Pastor `Bvunza Pastor` 
+4. *Namata*: Prayer Room + Daily Focus + Requests
+5. *Nziyo*: Admin-curated Gospel playlists
+6. *Profile*: Streak, Answered prayers count, Settings, Language Shona/English
+
+### *Admin Panel v2: What Elders Can Now Do*
+Add these 2 tabs to the Admin Dashboard:
+**Tab**	**Action**
+**Prayers**	Post "Daily Focus", Approve/Delete youth requests, Mark "Answered"
+**Music**	Upload MP3/YouTube link, Add to Playlist, Add Lyrics, Set Offline = Yes/No
+### *Privacy + Safety Reminders*
+1. *Prayer Room*: All requests are anonymous. No names, no replies, only `❤️ Ndiri Kukunamatira`. Prevents gossip.
+2. *Music*: Only admins upload. This keeps it 100% gospel + avoids lawsuits.
+3. *Moderation*: All 3 rooms have "Report" button that pings Admins on WhatsApp/Email.
+
+---
+
+### *Next Vibe-Coding Prompt Update*
+Paste this add-on to your last prompt:
+Add 3 new tabs: 
+1. Prayer Room: Top card = "Daily Focus" from admin. Below = list of anonymous prayer requests with heart button. Form to submit new request. 
+2. Music: 2 playlists: "Ruwa Worship" and "Quiet Time". Play button. Admin uploaded only. 
+3. Footer: Sticky bottom bar showing "Verse of the Day: Phil 4:13". Tap opens today's devotion.
+Admin panel: Add Prayers tab and Music Upload tab.
+---
+
+*Real question for you now*: 
+1. *Music*: Do you have 10-15 gospel songs from Ruwa church or local artists you can upload legally for v1?
+2. *Admins*: Can you get 2 elders to commit to checking the Prayer + Question Room every evening?
+
+Tell me which one you want me to do next: 
+*A*: Write the full *Database Schema* so a dev can build it. 
+*B*: Draft *30 Daily Prayer Focus topics* for the first month. 
+*C*: Write the *Music Copyright Checklist* so you don’t get in trouble.Perfect, that clears it up 👌 So we’re building 2 different private spaces + 1 admin panel. Let’s lock it in.
+
+*App Structure v1.1: "Safe + Anonymous + Pastor-Led"*
+
+*1. Anonymous Discussion Room: "Imba Yokutaura"* 
+*Goal*: Youths chat freely without fear.
+*How it works:*
+1.  *100% Anonymous*: No names, no numbers, no profile pics. Every youth gets a random auto-name like `Mukoma_Butterfly23` or `Sisi_Star42`. Changes every 7 days so no one gets doxxed.
+2.  *No DMs*: It’s a group chat only, moderated. No private messaging between youths = no grooming risk.
+3.  *Guardrails*: Auto-filter bad words. "Report" button on every message. 1 strike = mute 24hrs by a moderator.
+4.  *Topics*: Daily prompt like `Nhasi: Stress yechikoro` so chat doesn’t go off-rails.
+
+*2. Question Room: "Bvunza Pastor"* 
+*Goal*: 1-on-1, private Q&A for real issues. Social, spiritual, economical.
+*How it works:*
+1.  *Youth Side*: Tap `Bvunza Chinhu Chako` → Type question → Send. It’s anonymous. They get a ticket ID: `#RY-1042` to check replies.
+2.  *Pastor/Admin Side*: See a queue of questions. No youth name shown. Only the question + timestamp.
+3.  *Reply Flow*: Pastor/Elder logs in → Types answer → Hits "Send to #RY-1042". Youth gets a push: `Mhinduro yako yauya 🙏`
+4.  *Privacy*: Pastor never sees phone number, email, or device ID. Supabase/Firebase hides it.
+
+*3. Admin Panel: "Pastor & Elders Only"* 
+*Login*: Unique. Not phone OTP. We do `Email + Strong Password + 2FA` just for admins. No youth can access this.
+*Admin Powers:*
+**Power**	**What it does**
+**Manage Questions**	View queue, reply, mark as "Answered", archive.
+**Post Devotions**	Add `Pekuti YaMangwana`. Title, Verse, Shona text, English text, Action point, Image. Schedule for 5AM.
+**Post Prayers**	Add daily prayer to Prayer Wall. Pin important ones.
+**Moderate Chat**	Mute, delete, or warn users in Imba Yokutaura. View reports.
+**Manage Mentors**	Add/remove other elders/pastors who can reply to questions.
+*Tech + Safety Setup To Make This Real*
+
+1.  *Auth for Youths*: Phone number + OTP via Firebase, but we only store a hashed `user_id`. No name saved. 
+2.  *Auth for Admins*: Separate Firebase role = `admin`. You set it manually in the backend. No sign-up form.
+3.  *Data Privacy Rule*: Rule #1: `Admins CANNOT see who asked what`. The DB stores `question` + `reply` but not `user_id` linked to it.
+4.  *Content Safety*: Use AI to pre-flag questions with keywords like "suicide", "abuse". Auto-alert Pastor + show helpline number first.
+
+*Updated Vibe-Coding Prompt*
+Add this to the last prompt I gave you:
+Add an Admin Login screen. Email: pastor@ruwa.com Pass: demo123. 
+Admin Dashboard has 3 tabs: 
+1. Questions: List of anonymous questions with Reply box. 
+2. Devotions: Form to Add/Edit daily devotion with Shona+English fields. 
+3. Chat Moderation: List of recent "Imba Yokutaura" messages with Mute/Delete buttons.
+
+For Youths: Imba Yokutaura = anonymous group chat with random names. Bvunza Pastor = anonymous form that goes to Admin queue. Show "Answered" status.
+---
+
+*Key question before we build*: 
+Who are your first 2-3 Admins? We need real pastors/elders committed to reply within 24hrs, or youths will stop using "Bvunza Pastor".
+
+Want me to draft the *Admin Guidelines doc* next? So elders know how to answer tough Qs safely?youths should also be able to say their prayer requests soo there should be a  prayer room also ...in the prayer room each day there should be specific issues that everyone should be praying for and all the stated prayer requests.....there also is to be a music section whereby uploaded music wich will be uploaded by the admins should be provided...there should be gospel playlist with church music , the footer should have floating daily devotional versesGot you 👊 Let’s keep moving.
+
+You said "continue" — so let’s go straight to *building it*. No more talking.
+
+*Step 1: The Vibe-Coding Prompt for v1 Prototype*
+Copy-paste this into *Replit AI, Cursor, Vercel v0, or FlutterFlow AI* and it will spit out a working app skeleton in ∼5 mins:
+Build a mobile-first youth church app called "Pekuti" for Ruwa City Youth, Harare. 
+Style: Navy + Gold, clean, modern, Gen-Z friendly. Mobile only, bottom nav.
+
+Include 4 tabs:
+1. **Devotion Tab**: Show "Pekuti YaNhasi" card. Verse: John 3:16. Reflection: 2 lines in Shona+English. Action: "Pray for 1 friend today". Streak counter: 🔥 3 days.
+2. **Bvunza Tab**: Big button "Bvunza Chinhu Chako". Text input for anonymous question. Below it: "Mentors will reply within 24hrs". Show 2 dummy answered Qs.
+3. **Services Tab**: Card: "Youth Service: Sunday 3PM | Ruwa Hall". Speaker: Pastor T. Theme: "Purpose". Button: "RSVP". 
+4. **Prayer Wall Tab**: Feed of anonymous requests. Ex: "Pray for my exams 🙏". Button: "Ndiri Kukunamatira" with heart count.
+
+Use fake data. No backend yet. Make it responsive, fast, and feel like WhatsApp + Instagram mixed. Add Shona/English toggle at top.
+Run that → you’ll have something to show the team tomorrow.
+
+*Step 2: Tech Decision = Mobile First* 
+Muchineuta was spot on: *Mobile app > Web app* for youths. 
+*My recommendation for you in ZW*: 
+1. *Flutter + Firebase* = Best balance. 1 codebase, works on all Android phones, easy push notifs, offline devotions. 
+2. *Why not just web?* Youths will delete a bookmark. They won’t delete an app icon on their home screen.
+
+*Step 3: Solve the "Unique + Problem" Part* 
+Here’s how we answer Muchineuta’s 2 questions directly in the app:
+
+1. *Problem we address*: `Loneliness, silence, and no daily spiritual anchor for Ruwa youths`
+2. *How we’re unique*: 
+   - *"Mentor, not Robot"*: Ask Room is real people from your church. Put their photos + "Pastor T replies fast" to build trust.
+   - *"Shona First"*: Default language is Shona. Every devotion has a `muShona` version. No other app does that well for Zim youth.
+   - *"Life, not just Bible"*: Ask Room covers social, spiritual, economical like you said. Ex: “How do I budget tithes + data bundles?”
+
+*Step 4: What I Need From You Next*
+To make this real, not just a demo, pick 1:
+1.  *A*: I write the full *data model + screen flow* so any dev can build it in 2 weeks.
+2.  *B*: I give you *30 days of Shona/English devotions* to upload day 1 so it doesn’t look empty.
+3.  *C*: I draft the *Mentor Guidelines* for the Ask Room so answers stay biblical + safe.
+
+Which one do you want first? 
+
+And real talk: Do you have 2-3 youths who can commit to being mentors for the Ask Room? That’s what will make or break this.the private discussion room  room is whereby youths will be able to chat without their credentials being leaked....they willbe unnonymouse and   there should also be a question room where by youths address their issues privately and the pastor should have a specific login that is unique for admins only whereby the elderly and pastor can provide answers for the questions in hand...the admins should also be able to add daily devotions and prayersLet's make this concrete. Since we want to map out the backend structure to handle the anonymous rooms, the pastor's panel, the corporate prayer wall, and the curated music ecosystem, the solid way forward is establishing a rock-solid database design.
+Here is the complete **Database Schema** structured for Supabase/PostgreSQL. It handles the strict privacy guardrails we talked about while keeping data tracking smooth.
+## 🛠️ The Core Database Schema
+### 1. devotions
+Stores the daily content pushed by the admin team.
+```sql
+CREATE TABLE devotions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    publish_date DATE UNIQUE NOT NULL, -- Ensure only one devotion per day
+    title_en VARCHAR(255) NOT NULL,
+    title_sn VARCHAR(255) NOT NULL,
+    verse_reference VARCHAR(100) NOT NULL, -- e.g., "John 3:16"
+    verse_text_en TEXT NOT NULL,
+    verse_text_sn TEXT NOT NULL,
+    reflection_en TEXT NOT NULL,
+    reflection_sn TEXT NOT NULL,
+    action_point_en TEXT NOT NULL,
+    action_point_sn TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 2. questions ("Bvunza Pastor")
+To protect the identity of the youth asking sensitive questions, we **do not** link this table to a user account ID via a foreign key constraint. Instead, it relies on an unlinked, unique ticket_id stored locally in the youth's app state.
+```sql
+CREATE TABLE questions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ticket_id VARCHAR(50) UNIQUE NOT NULL, -- Generated client-side or pseudo-randomly
+    question_text TEXT NOT NULL,
+    category VARCHAR(50) NOT NULL, -- 'social', 'spiritual', 'economical'
+    is_answered BOOLEAN DEFAULT FALSE,
+    answered_by_admin_id UUID REFERENCES auth.users(id), -- Tracks which elder replied
+    answer_text TEXT,
+    answered_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 3. prayer_requests ("Imba Yokunamatira")
+Tracks community prayer focuses and individual anonymous requests.
+```sql
+CREATE TABLE prayer_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    is_daily_focus BOOLEAN DEFAULT FALSE, -- True if posted by Pastor as a main focus banner
+    request_text TEXT NOT NULL,
+    pray_count INT DEFAULT 0, -- Incremented when someone taps "Ndiri Kukunamatira"
+    is_answered BOOLEAN DEFAULT FALSE, -- Pastor can toggle to move it to the Answered Wall
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 4. gospel_tracks ("Nziyo dzaMwari")
+Curated completely by the admins to keep storage lightweight and copyright safe.
+```sql
+CREATE TABLE gospel_tracks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    artist VARCHAR(255) NOT NULL,
+    audio_url TEXT NOT NULL, -- Points to Supabase Storage bucket hosting the compressed MP3
+    lyrics_en TEXT,
+    lyrics_sn TEXT,
+    playlist_category VARCHAR(100) DEFAULT 'General', -- e.g., 'Ruwa Worship', 'Quiet Time'
+    uploaded_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 5. anonymous_chat_room ("Imba Yokutaura")
+The group chat environment where names change to break up long-term tracking.
+```sql
+CREATE TABLE anonymous_chat_room (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    alias_name VARCHAR(100) NOT NULL, -- e.g., "Mukoma_Butterfly23"
+    message_text TEXT NOT NULL,
+    is_flagged BOOLEAN DEFAULT FALSE, -- Set to true if a youth hits "Report"
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+## 🔒 Row-Level Security (RLS) & Privacy Rules
+To make sure youths trust the platform entirely, apply these rules in your database backend:
+ 1. **Anonymous Chat Safeguard:** Keep retention low on anonymous_chat_room. Set a cron job to automatically wipe messages older than 7 days to keep performance high and prevent conversational logs from building up permanently.
+ 2. **The "Bvunza" Firewall:** Because there is no link between the questions table and the user authentication profile table, even an admin with direct database access cannot look at a row and see who sent it. They can only see the text and the random alphanumeric ticket identifier.
+ 3. **Admin Exclusivity:** Ensure that write/insert permissions on devotions and gospel_tracks require an authenticated session token carrying an explicit admin claim metadata flag.
+Which step makes the most sense for the team to focus on next?
+ * **A:** Draft **30 Daily Prayer Focus topics** to prime the prayer wall for month one.
+ * **B:** Outline the specific **UI Screen Flows** detailing exactly how the navigation switches across the tabs.
+Let’s map out the database design next. To handle anonymous spaces, corporate prayer items, a pastor’s response queue, and a clean music ecosystem, we need an organized backend structure.
+Below is a relational database schema designed for PostgreSQL/Supabase, incorporating the explicit privacy guardrails discussed by your team.
+## 🛠️ The Core Database Schema
+### 1. devotions
+Stores the hyper-local daily devotions managed by the ministry team.
+```sql
+CREATE TABLE devotions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    publish_date DATE UNIQUE NOT NULL, -- Limits content to one release per day
+    title_en VARCHAR(255) NOT NULL,
+    title_sn VARCHAR(255) NOT NULL,
+    verse_reference VARCHAR(100) NOT NULL, -- e.g., "VaFilipi 4:13"
+    verse_text_en TEXT NOT NULL,
+    verse_text_sn TEXT NOT NULL,
+    reflection_en TEXT NOT NULL,
+    reflection_sn TEXT NOT NULL,
+    action_point_en TEXT NOT NULL,
+    action_point_sn TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 2. questions ("Bvunza Pastor")
+To ensure that identity protection remains solid, this table intentionally leaves out a foreign key connection to the authenticated user table. It relies instead on an isolated client-side ticket identifier.
+```sql
+CREATE TABLE questions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ticket_id VARCHAR(50) UNIQUE NOT NULL, -- Generated randomly on submission
+    question_text TEXT NOT NULL,
+    category VARCHAR(50) NOT NULL, -- 'social', 'spiritual', 'economical'
+    is_answered BOOLEAN DEFAULT FALSE,
+    answered_by_admin_id UUID REFERENCES auth.users(id), -- Logs tracking for internal accountability
+    answer_text TEXT,
+    answered_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 3. prayer_requests ("Imba Yokunamatira")
+Handles corporate intentional prayer points as well as individual, anonymous wall posts.
+```sql
+CREATE TABLE prayer_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    is_daily_focus BOOLEAN DEFAULT FALSE, -- Flag indicating admin-pinned corporate focal points
+    request_text TEXT NOT NULL,
+    pray_count INT DEFAULT 0, -- Increments when a user taps "Ndiri Kukunamatira"
+    is_answered BOOLEAN DEFAULT FALSE, -- Moves the element into the "Apindurwa" bucket
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 4. gospel_tracks ("Nziyo dzaMwari")
+A read-only table for standard users, fully populated from the admin panel to control content curation.
+```sql
+CREATE TABLE gospel_tracks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    artist VARCHAR(255) NOT NULL,
+    audio_url TEXT NOT NULL, -- Points to stored, optimized MP3 files
+    lyrics_en TEXT,
+    lyrics_sn TEXT,
+    playlist_category VARCHAR(100) DEFAULT 'General', -- e.g., 'Ruwa Worship', 'Quiet Time'
+    uploaded_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 5. anonymous_chat_room ("Imba Yokutaura")
+The open discussion thread utilizing transient identifiers to isolate dialogue history.
+```sql
+CREATE TABLE anonymous_chat_room (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    alias_name VARCHAR(100) NOT NULL, -- Assigned automated moniker (e.g., Sisi_Star42)
+    message_text TEXT NOT NULL,
+    is_flagged BOOLEAN DEFAULT FALSE, -- Flips to true upon user-generated reporting
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+## 🔒 Security Posture & Data Isolation Rules
+ * **Enforce Strict Row-Level Security (RLS):** Apply comprehensive Postgres RLS policies specifying that only requests originating from administrative accounts are authorized to execute insert, update, or delete commands on the devotions and gospel_tracks tables.
+ * **The Anonymity Firewall:** Because there is no link between the questions or prayer_requests tables and the underlying authentication metadata, looking directly at the database layers will still preserve user confidentiality.
+ * **Automatic Cache Wiping:** Configure a recurring background utility or cron job to prune entries from anonymous_chat_room older than 7 days. This balances server management costs over time while removing persistent trails of old conversations.
+Which phase do you want to organize next?
+ * **A:** Draft **30 Daily Prayer Focus topics** to populate the prayer wall for the first month.
+ * **B:** Outline the formal **UI Screen Flows** detailing exactly how navigation transitions between the 6 tabs.

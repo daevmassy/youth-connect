@@ -1,0 +1,86 @@
+Let’s map out the database design next. To handle anonymous spaces, corporate prayer items, a pastor’s response queue, and a clean music ecosystem, we need an organized backend structure.
+Below is a relational database schema designed for PostgreSQL/Supabase, incorporating the explicit privacy guardrails discussed by your team.
+## 🛠️ The Core Database Schema
+### 1. devotions
+Stores the hyper-local daily devotions managed by the ministry team.
+```sql
+CREATE TABLE devotions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    publish_date DATE UNIQUE NOT NULL, -- Limits content to one release per day
+    title_en VARCHAR(255) NOT NULL,
+    title_sn VARCHAR(255) NOT NULL,
+    verse_reference VARCHAR(100) NOT NULL, -- e.g., "VaFilipi 4:13"
+    verse_text_en TEXT NOT NULL,
+    verse_text_sn TEXT NOT NULL,
+    reflection_en TEXT NOT NULL,
+    reflection_sn TEXT NOT NULL,
+    action_point_en TEXT NOT NULL,
+    action_point_sn TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 2. questions ("Bvunza Pastor")
+To ensure that identity protection remains solid, this table intentionally leaves out a foreign key connection to the authenticated user table. It relies instead on an isolated client-side ticket identifier.
+```sql
+CREATE TABLE questions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ticket_id VARCHAR(50) UNIQUE NOT NULL, -- Generated randomly on submission
+    question_text TEXT NOT NULL,
+    category VARCHAR(50) NOT NULL, -- 'social', 'spiritual', 'economical'
+    is_answered BOOLEAN DEFAULT FALSE,
+    answered_by_admin_id UUID REFERENCES auth.users(id), -- Logs tracking for internal accountability
+    answer_text TEXT,
+    answered_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 3. prayer_requests ("Imba Yokunamatira")
+Handles corporate intentional prayer points as well as individual, anonymous wall posts.
+```sql
+CREATE TABLE prayer_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    is_daily_focus BOOLEAN DEFAULT FALSE, -- Flag indicating admin-pinned corporate focal points
+    request_text TEXT NOT NULL,
+    pray_count INT DEFAULT 0, -- Increments when a user taps "Ndiri Kukunamatira"
+    is_answered BOOLEAN DEFAULT FALSE, -- Moves the element into the "Apindurwa" bucket
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 4. gospel_tracks ("Nziyo dzaMwari")
+A read-only table for standard users, fully populated from the admin panel to control content curation.
+```sql
+CREATE TABLE gospel_tracks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    artist VARCHAR(255) NOT NULL,
+    audio_url TEXT NOT NULL, -- Points to stored, optimized MP3 files
+    lyrics_en TEXT,
+    lyrics_sn TEXT,
+    playlist_category VARCHAR(100) DEFAULT 'General', -- e.g., 'Ruwa Worship', 'Quiet Time'
+    uploaded_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+### 5. anonymous_chat_room ("Imba Yokutaura")
+The open discussion thread utilizing transient identifiers to isolate dialogue history.
+```sql
+CREATE TABLE anonymous_chat_room (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    alias_name VARCHAR(100) NOT NULL, -- Assigned automated moniker (e.g., Sisi_Star42)
+    message_text TEXT NOT NULL,
+    is_flagged BOOLEAN DEFAULT FALSE, -- Flips to true upon user-generated reporting
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+```
+## 🔒 Security Posture & Data Isolation Rules
+ * **Enforce Strict Row-Level Security (RLS):** Apply comprehensive Postgres RLS policies specifying that only requests originating from administrative accounts are authorized to execute insert, update, or delete commands on the devotions and gospel_tracks tables.
+ * **The Anonymity Firewall:** Because there is no link between the questions or prayer_requests tables and the underlying authentication metadata, looking directly at the database layers will still preserve user confidentiality.
+ * **Automatic Cache Wiping:** Configure a recurring background utility or cron job to prune entries from anonymous_chat_room older than 7 days. This balances server management costs over time while removing persistent trails of old conversations.
+Which phase do you want to organize next?
+ * **A:** Draft **30 Daily Prayer Focus topics** to populate the prayer wall for the first month.
+ * **B:** Outline the formal **UI Screen Flows** detailing exactly how navigation transitions between the 6 tabs.
