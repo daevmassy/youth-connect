@@ -10,6 +10,18 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Registration, login, and profile
+  - name: devotionals
+    description: Daily devotionals
+  - name: reading-plans
+    description: Bible reading plans
+  - name: prayers
+    description: Prayer requests
+  - name: events
+    description: Youth events
+  - name: chat
+    description: Chat rooms and pastor questions
 paths:
   /healthz:
     get:
@@ -24,6 +36,365 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Create a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in with email/username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get the current user's profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+    patch:
+      operationId: updateMe
+      tags: [auth]
+      summary: Update the current user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+
+  /devotionals:
+    get:
+      operationId: listDevotionals
+      tags: [devotionals]
+      summary: List devotionals
+      responses:
+        "200":
+          description: Devotionals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevotionalsResponse"
+    post:
+      operationId: createDevotional
+      tags: [devotionals]
+      summary: Create a devotional (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDevotionalRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevotionalResponse"
+
+  /devotionals/{id}:
+    delete:
+      operationId: deleteDevotional
+      tags: [devotionals]
+      summary: Delete a devotional (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /reading-plans:
+    get:
+      operationId: listReadingPlans
+      tags: [reading-plans]
+      summary: List reading plans with their days
+      responses:
+        "200":
+          description: Reading plans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadingPlansResponse"
+
+  /reading-plans/progress:
+    get:
+      operationId: getReadingProgress
+      tags: [reading-plans]
+      summary: Get the current user's reading progress
+      responses:
+        "200":
+          description: Reading progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadingProgressResponse"
+
+  /reading-plans/days/{dayId}/complete:
+    post:
+      operationId: completeReadingDay
+      tags: [reading-plans]
+      summary: Mark a reading plan day complete
+      parameters:
+        - name: dayId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Marked complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadingProgressItemResponse"
+
+  /prayers:
+    get:
+      operationId: listPrayers
+      tags: [prayers]
+      summary: List prayer requests
+      responses:
+        "200":
+          description: Prayer requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrayersResponse"
+    post:
+      operationId: createPrayer
+      tags: [prayers]
+      summary: Submit a prayer request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePrayerRequest"
+      responses:
+        "201":
+          description: Created
+
+  /prayers/{id}/pray:
+    post:
+      operationId: togglePray
+      tags: [prayers]
+      summary: Toggle "praying for this" on a request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrayToggleResult"
+
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List upcoming events
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventsResponse"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create an event (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventRequest"
+      responses:
+        "201":
+          description: Created
+
+  /events/{id}/rsvp:
+    post:
+      operationId: toggleRsvp
+      tags: [events]
+      summary: Toggle RSVP on an event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RsvpToggleResult"
+
+  /chat/{room}:
+    get:
+      operationId: listChatMessages
+      tags: [chat]
+      summary: List messages in a chat room
+      parameters:
+        - name: room
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ChatRoom"
+      responses:
+        "200":
+          description: Chat messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessagesResponse"
+    post:
+      operationId: sendChatMessage
+      tags: [chat]
+      summary: Send a message to a chat room
+      parameters:
+        - name: room
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ChatRoom"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendChatMessageRequest"
+      responses:
+        "201":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessageResponse"
+
+  /questions:
+    get:
+      operationId: listMyQuestions
+      tags: [chat]
+      summary: List the current user's questions to the pastor
+      responses:
+        "200":
+          description: Questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionsResponse"
+    post:
+      operationId: submitQuestion
+      tags: [chat]
+      summary: Submit a private question to the pastor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitQuestionRequest"
+      responses:
+        "201":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionResponse"
+
+  /questions/all:
+    get:
+      operationId: listAllQuestions
+      tags: [chat]
+      summary: List all questions (admin)
+      responses:
+        "200":
+          description: Questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionsResponse"
+
+  /questions/{id}/answer:
+    patch:
+      operationId: answerQuestion
+      tags: [chat]
+      summary: Answer a question (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnswerQuestionRequest"
+      responses:
+        "200":
+          description: Answered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +405,396 @@ components:
       required:
         - status
 
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        bio:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, firstName, lastName, username, email, createdAt]
+
+    RegisterRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required: [firstName, lastName, username, email, password]
+
+    LoginRequest:
+      type: object
+      properties:
+        identifier:
+          type: string
+          description: Email or username
+        password:
+          type: string
+      required: [identifier, password]
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        bio:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required: [token, user]
+
+    UserResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+      required: [user]
+
+    Devotional:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        scriptureRef:
+          type: string
+        scriptureText:
+          type: string
+        body:
+          type: string
+        publishDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, scriptureRef, scriptureText, body, publishDate, createdAt]
+
+    CreateDevotionalRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        scriptureRef:
+          type: string
+        scriptureText:
+          type: string
+        body:
+          type: string
+      required: [title, scriptureRef, scriptureText, body]
+
+    DevotionalsResponse:
+      type: object
+      properties:
+        devotionals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Devotional"
+      required: [devotionals]
+
+    DevotionalResponse:
+      type: object
+      properties:
+        devotional:
+          $ref: "#/components/schemas/Devotional"
+      required: [devotional]
+
+    ReadingPlanDay:
+      type: object
+      properties:
+        id:
+          type: integer
+        planId:
+          type: integer
+        dayNumber:
+          type: integer
+        passage:
+          type: string
+        reflection:
+          type: string
+      required: [id, planId, dayNumber, passage]
+
+    ReadingPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadingPlanDay"
+      required: [id, title, createdAt, days]
+
+    ReadingPlansResponse:
+      type: object
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadingPlan"
+      required: [plans]
+
+    ReadingProgressItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        planDayId:
+          type: integer
+        completed:
+          type: boolean
+        completedAt:
+          type: string
+          format: date-time
+      required: [id, userId, planDayId, completed, completedAt]
+
+    ReadingProgressResponse:
+      type: object
+      properties:
+        progress:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadingProgressItem"
+      required: [progress]
+
+    ReadingProgressItemResponse:
+      type: object
+      properties:
+        progress:
+          $ref: "#/components/schemas/ReadingProgressItem"
+      required: [progress]
+
+    PrayerRequestItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        content:
+          type: string
+        isAnonymous:
+          type: boolean
+        prayCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        author:
+          type: string
+          nullable: true
+        isOwn:
+          type: boolean
+        hasPrayed:
+          type: boolean
+      required: [id, content, isAnonymous, prayCount, createdAt, isOwn, hasPrayed]
+
+    PrayersResponse:
+      type: object
+      properties:
+        prayers:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrayerRequestItem"
+      required: [prayers]
+
+    CreatePrayerRequest:
+      type: object
+      properties:
+        content:
+          type: string
+        isAnonymous:
+          type: boolean
+      required: [content]
+
+    PrayToggleResult:
+      type: object
+      properties:
+        hasPrayed:
+          type: boolean
+      required: [hasPrayed]
+
+    EventItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        isRsvped:
+          type: boolean
+      required: [id, title, startsAt, createdAt, isRsvped]
+
+    EventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventItem"
+      required: [events]
+
+    CreateEventRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+      required: [title, startsAt]
+
+    RsvpToggleResult:
+      type: object
+      properties:
+        isRsvped:
+          type: boolean
+      required: [isRsvped]
+
+    AnswerQuestionRequest:
+      type: object
+      properties:
+        answer:
+          type: string
+      required: [answer]
+
+    ChatRoom:
+      type: string
+      enum: [friends, anonymous]
+
+    ChatMessageItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        room:
+          type: string
+        userId:
+          type: integer
+        displayName:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, room, userId, displayName, content, createdAt]
+
+    ChatMessagesResponse:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessageItem"
+      required: [messages]
+
+    SendChatMessageRequest:
+      type: object
+      properties:
+        content:
+          type: string
+        displayName:
+          type: string
+      required: [content, displayName]
+
+    ChatMessageResponse:
+      type: object
+      properties:
+        message:
+          $ref: "#/components/schemas/ChatMessageItem"
+      required: [message]
+
+    QuestionItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        ticketCode:
+          type: string
+        content:
+          type: string
+        answer:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        answeredAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, userId, ticketCode, content, createdAt]
+
+    QuestionsResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionItem"
+      required: [questions]
+
+    SubmitQuestionRequest:
+      type: object
+      properties:
+        content:
+          type: string
+      required: [content]
+
+    QuestionResponse:
+      type: object
+      properties:
+        question:
+          $ref: "#/components/schemas/QuestionItem"
+      required: [question]

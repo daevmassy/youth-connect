@@ -17,19 +17,19 @@ function NativeTabLayout() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="devotion">
         <Icon sf={{ default: 'book', selected: 'book.fill' }} />
-        <Label>Pekuti</Label>
+        <Label>Devotion</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="community">
         <Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} />
-        <Label>Imba</Label>
+        <Label>Community</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="prayer">
         <Icon sf={{ default: 'hands.sparkles', selected: 'hands.sparkles.fill' }} />
-        <Label>Namata</Label>
+        <Label>Prayer</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="music">
-        <Icon sf={{ default: 'music.note.list', selected: 'music.note.list' }} />
-        <Label>Nziyo</Label>
+      <NativeTabs.Trigger name="more">
+        <Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} />
+        <Label>More</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -87,7 +87,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="devotion"
         options={{
-          title: 'Pekuti',
+          title: 'Devotion',
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="book.fill" tintColor={color} size={22} />
@@ -99,7 +99,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="community"
         options={{
-          title: 'Imba',
+          title: 'Community',
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="bubble.left.and.bubble.right.fill" tintColor={color} size={22} />
@@ -111,7 +111,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="prayer"
         options={{
-          title: 'Namata',
+          title: 'Prayer',
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="hands.sparkles.fill" tintColor={color} size={22} />
@@ -121,14 +121,14 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="music"
+        name="more"
         options={{
-          title: 'Nziyo',
+          title: 'More',
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="music.note.list" tintColor={color} size={22} />
+              <SymbolView name="square.grid.2x2.fill" tintColor={color} size={22} />
             ) : (
-              <Feather name="music" size={22} color={color} />
+              <Feather name="grid" size={22} color={color} />
             ),
         }}
       />

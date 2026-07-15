@@ -20,7 +20,7 @@ const PLAYLISTS = ['Ruwa Worship', 'Quiet Time'];
 export default function MusicScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { tracks, currentTrack, isPlaying, playTrack, pauseTrack, t } = useApp();
+  const { tracks, currentTrack, isPlaying, playTrack, pauseTrack } = useApp();
   const [selectedPlaylist, setSelectedPlaylist] = useState('Ruwa Worship');
   const topPad = insets.top + (Platform.OS === 'web' ? 67 : 0);
 
@@ -32,11 +32,9 @@ export default function MusicScreen() {
         colors={['#065F46', '#059669']}
         style={[styles.header, { paddingTop: topPad + 16 }]}
       >
-        <Text style={styles.headerTitle}>
-          {t('Gospel Music', 'Nziyo dzaMwari')}
-        </Text>
+        <Text style={styles.headerTitle}>Gospel Music</Text>
         <Text style={[styles.headerSub, { color: 'rgba(255,255,255,0.7)' }]}>
-          {t('Admin curated — worship anywhere', 'Zvakarongwa nevakuru')}
+          Admin curated — worship anywhere
         </Text>
 
         {/* Playlist tabs */}
@@ -66,7 +64,7 @@ export default function MusicScreen() {
           <View style={styles.empty}>
             <Feather name="music" size={40} color={colors.mutedForeground} />
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              {t('No tracks yet. Admin will add music soon.', 'Hapana nziyo. Vakuru vachaisa nziyo.')}
+              No tracks yet. Admin will add music soon.
             </Text>
           </View>
         ) : (
@@ -98,7 +96,6 @@ export default function MusicScreen() {
           onToggle={pauseTrack}
           colors={colors}
           insets={insets}
-          t={t}
         />
       )}
     </View>
@@ -160,7 +157,7 @@ function TrackRow({ track, index, isPlaying, isCurrent, onPlay, colors }: {
           {track.artist}
         </Text>
       </View>
-      {track.lyricsSn || track.lyricsEn ? (
+      {track.lyrics ? (
         <View style={[styles.lyricsBadge, { backgroundColor: colors.secondary }]}>
           <Text style={[styles.lyricsBadgeText, { color: colors.mutedForeground }]}>
             Lyrics
@@ -177,13 +174,12 @@ function TrackRow({ track, index, isPlaying, isCurrent, onPlay, colors }: {
   );
 }
 
-function MiniPlayer({ track, isPlaying, onToggle, colors, insets, t }: {
+function MiniPlayer({ track, isPlaying, onToggle, colors, insets }: {
   track: GospelTrack;
   isPlaying: boolean;
   onToggle: () => void;
   colors: ReturnType<typeof useColors>;
   insets: { bottom: number };
-  t: (e: string, s: string) => string;
 }) {
   const bottomPad = insets.bottom + (Platform.OS === 'web' ? 84 : 0);
 

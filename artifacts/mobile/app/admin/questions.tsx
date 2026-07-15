@@ -10,27 +10,45 @@ import {
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useColors } from '@/hooks/useColors';
-import { useApp } from '@/context/AppContext';
-import { type Question, formatTime } from '@/data/mockData';
+import { useListAllQuestions, useAnswerQuestion, type QuestionItem } from '@workspace/api-client-react';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+function formatTime(isoString: string): string {
+  const date = new Date(isoString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days === 1) return 'Yesterday';
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
 
 export default function AdminQuestionsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { questions, answerQuestion } = useApp();
+  const { data, refetch } = useListAllQuestions();
+  const answerQuestion = useAnswerQuestion();
   const [filter, setFilter] = useState<'pending' | 'answered'>('pending');
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
 
   const bottomPad = insets.bottom + (Platform.OS === 'web' ? 34 : 0);
-  const filtered = questions.filter(q => filter === 'pending' ? !q.isAnswered : q.isAnswered);
+  const questions = data?.questions ?? [];
+  const pendingCount = questions.filter(q => !q.answer).length;
+  const answeredCount = questions.filter(q => q.answer).length;
+  const filtered = questions.filter(q => filter === 'pending' ? !q.answer : !!q.answer);
 
-  function handleSendReply(questionId: string) {
+  async function handleSendReply(id: number) {
     if (!replyText.trim()) return;
-    answerQuestion(questionId, replyText.trim());
+    await answerQuestion.mutateAsync({ id, data: { answer: replyText.trim() } });
     setReplyingTo(null);
     setReplyText('');
+    await refetch();
   }
 
   return (
@@ -43,7 +61,7 @@ export default function AdminQuestionsScreen() {
             style={[styles.filterBtn, { backgroundColor: filter === f ? colors.primary : 'transparent' }]}
           >
             <Text style={[styles.filterText, { color: filter === f ? '#fff' : colors.mutedForeground }]}>
-              {f === 'pending' ? `Pending (${questions.filter(q => !q.isAnswered).length})` : `Answered (${questions.filter(q => q.isAnswered).length})`}
+              {f === 'pending' ? `Pending (${pendingCount})` : `Answered (${answeredCount})`}
             </Text>
           </Pressable>
         ))}
@@ -51,7 +69,7 @@ export default function AdminQuestionsScreen() {
 
       <FlatList
         data={filtered}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id.toString()}
         contentContainerStyle={[styles.list, { paddingBottom: bottomPad + 40 }]}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
@@ -80,7 +98,7 @@ export default function AdminQuestionsScreen() {
 }
 
 function AdminQuestionCard({ question, isReplying, replyText, onStartReply, onCancelReply, onReplyChange, onSendReply, colors }: {
-  question: Question;
+  question: QuestionItem;
   isReplying: boolean;
   replyText: string;
   onStartReply: () => void;
@@ -93,25 +111,20 @@ function AdminQuestionCard({ question, isReplying, replyText, onStartReply, onCa
     <View style={[styles.card, { backgroundColor: colors.card }]}>
       <View style={styles.cardHeader}>
         <View style={[styles.ticketBadge, { backgroundColor: colors.secondary }]}>
-          <Text style={[styles.ticketText, { color: colors.primary }]}>{question.ticketId}</Text>
-        </View>
-        <View style={[styles.catBadge, { backgroundColor: question.category === 'spiritual' ? colors.goldLight as string : question.category === 'social' ? '#EDE9FE' : '#DCFCE7' }]}>
-          <Text style={[styles.catText, { color: question.category === 'spiritual' ? colors.goldDark as string : question.category === 'social' ? '#5B21B6' : '#15803D' }]}>
-            {question.category}
-          </Text>
+          <Text style={[styles.ticketText, { color: colors.primary }]}>{question.ticketCode}</Text>
         </View>
         <Text style={[styles.timeText, { color: colors.mutedForeground }]}>{formatTime(question.createdAt)}</Text>
       </View>
-      <Text style={[styles.questionText, { color: colors.foreground }]}>{question.questionText}</Text>
+      <Text style={[styles.questionText, { color: colors.foreground }]}>{question.content}</Text>
 
-      {question.isAnswered && question.answerText && (
+      {question.answer && (
         <View style={[styles.answerBox, { backgroundColor: colors.goldLight as string, borderLeftColor: colors.gold as string }]}>
           <Text style={[styles.answerLabel, { color: colors.goldDark as string }]}>Your answer:</Text>
-          <Text style={[styles.answerText, { color: colors.foreground }]}>{question.answerText}</Text>
+          <Text style={[styles.answerText, { color: colors.foreground }]}>{question.answer}</Text>
         </View>
       )}
 
-      {!question.isAnswered && (
+      {!question.answer && (
         isReplying ? (
           <View>
             <TextInput
@@ -156,8 +169,6 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' },
   ticketBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   ticketText: { fontSize: 11, fontFamily: 'Inter_700Bold' },
-  catBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  catText: { fontSize: 11, fontFamily: 'Inter_600SemiBold' },
   timeText: { fontSize: 11, fontFamily: 'Inter_400Regular', marginLeft: 'auto' },
   questionText: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 22, marginBottom: 14 },
   answerBox: { borderLeftWidth: 3, borderRadius: 4, paddingLeft: 12, paddingRight: 8, paddingVertical: 10 },

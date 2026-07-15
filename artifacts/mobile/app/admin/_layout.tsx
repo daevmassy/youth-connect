@@ -28,9 +28,8 @@ export default function AdminLayout() {
     >
       <Stack.Screen name="index" options={{ title: 'Admin Panel' }} />
       <Stack.Screen name="questions" options={{ title: 'Questions Queue' }} />
-      <Stack.Screen name="prayers" options={{ title: 'Prayer Focus' }} />
       <Stack.Screen name="devotions" options={{ title: 'Devotions' }} />
-      <Stack.Screen name="chat-mod" options={{ title: 'Chat Moderation' }} />
+      <Stack.Screen name="events" options={{ title: 'Events' }} />
     </Stack>
   );
 }

@@ -1,47 +1,47 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   FlatList,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { useColors } from '@/hooks/useColors';
-import { useApp } from '@/context/AppContext';
-import { type Devotion } from '@/data/mockData';
+import { useListDevotionals, useCreateDevotional, useDeleteDevotional } from '@workspace/api-client-react';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const EMPTY_FORM = { title: '', scriptureRef: '', scriptureText: '', body: '' };
 
 export default function AdminDevotionsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { devotions, addDevotion } = useApp();
+  const { data, refetch } = useListDevotionals();
+  const createDevotional = useCreateDevotional();
+  const deleteDevotional = useDeleteDevotional();
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    publishDate: new Date().toISOString().split('T')[0],
-    titleEn: '', titleSn: '',
-    verseReference: '',
-    verseTextEn: '', verseTextSn: '',
-    reflectionEn: '', reflectionSn: '',
-    actionPointEn: '', actionPointSn: '',
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const bottomPad = insets.bottom + (Platform.OS === 'web' ? 34 : 0);
+  const devotionals = data?.devotionals ?? [];
+  const todayStr = new Date().toISOString().split('T')[0];
 
-  function handleAdd() {
-    if (!form.titleEn || !form.verseReference) return;
-    addDevotion({
-      ...form,
-      titleSn: form.titleSn || form.titleEn,
-      verseTextSn: form.verseTextSn || form.verseTextEn,
-      reflectionSn: form.reflectionSn || form.reflectionEn,
-      actionPointSn: form.actionPointSn || form.actionPointEn,
-    });
-    setForm({ publishDate: new Date().toISOString().split('T')[0], titleEn: '', titleSn: '', verseReference: '', verseTextEn: '', verseTextSn: '', reflectionEn: '', reflectionSn: '', actionPointEn: '', actionPointSn: '' });
+  async function handleAdd() {
+    if (!form.title || !form.scriptureRef || !form.scriptureText || !form.body) return;
+    await createDevotional.mutateAsync({ data: form });
+    setForm(EMPTY_FORM);
     setShowForm(false);
+    await refetch();
+  }
+
+  function handleDelete(id: number) {
+    Alert.alert('Delete devotion', 'Are you sure you want to delete this devotion?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => { await deleteDevotional.mutateAsync({ id }); await refetch(); } },
+    ]);
   }
 
   return (
@@ -49,8 +49,8 @@ export default function AdminDevotionsScreen() {
       style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={[styles.content, { paddingBottom: bottomPad + 40 }]}
       showsVerticalScrollIndicator={false}
-      data={devotions}
-      keyExtractor={item => item.id}
+      data={devotionals}
+      keyExtractor={item => item.id.toString()}
       ListHeaderComponent={
         <View>
           {!showForm ? (
@@ -61,18 +61,12 @@ export default function AdminDevotionsScreen() {
           ) : (
             <View style={[styles.formCard, { backgroundColor: colors.card }]}>
               <Text style={[styles.formTitle, { color: colors.primary }]}>New Devotion</Text>
-              <Field label="Publish Date" value={form.publishDate} onChange={v => setForm(p => ({ ...p, publishDate: v }))} colors={colors} placeholder="YYYY-MM-DD" />
-              <Field label="Title (English)" value={form.titleEn} onChange={v => setForm(p => ({ ...p, titleEn: v }))} colors={colors} placeholder="e.g. Purpose in the Storm" />
-              <Field label="Title (Shona)" value={form.titleSn} onChange={v => setForm(p => ({ ...p, titleSn: v }))} colors={colors} placeholder="e.g. Chinangwa Muchirima" />
-              <Field label="Verse Reference" value={form.verseReference} onChange={v => setForm(p => ({ ...p, verseReference: v }))} colors={colors} placeholder="e.g. Jeremiah 29:11" />
-              <Field label="Verse Text (English)" value={form.verseTextEn} onChange={v => setForm(p => ({ ...p, verseTextEn: v }))} colors={colors} multiline />
-              <Field label="Verse Text (Shona)" value={form.verseTextSn} onChange={v => setForm(p => ({ ...p, verseTextSn: v }))} colors={colors} multiline />
-              <Field label="Reflection (English)" value={form.reflectionEn} onChange={v => setForm(p => ({ ...p, reflectionEn: v }))} colors={colors} multiline />
-              <Field label="Reflection (Shona)" value={form.reflectionSn} onChange={v => setForm(p => ({ ...p, reflectionSn: v }))} colors={colors} multiline />
-              <Field label="Action Point (English)" value={form.actionPointEn} onChange={v => setForm(p => ({ ...p, actionPointEn: v }))} colors={colors} />
-              <Field label="Action Point (Shona)" value={form.actionPointSn} onChange={v => setForm(p => ({ ...p, actionPointSn: v }))} colors={colors} />
+              <Field label="Title" value={form.title} onChange={v => setForm(p => ({ ...p, title: v }))} colors={colors} placeholder="e.g. Purpose in the Storm" />
+              <Field label="Scripture Reference" value={form.scriptureRef} onChange={v => setForm(p => ({ ...p, scriptureRef: v }))} colors={colors} placeholder="e.g. Jeremiah 29:11" />
+              <Field label="Scripture Text" value={form.scriptureText} onChange={v => setForm(p => ({ ...p, scriptureText: v }))} colors={colors} multiline />
+              <Field label="Reflection" value={form.body} onChange={v => setForm(p => ({ ...p, body: v }))} colors={colors} multiline />
               <View style={styles.formBtns}>
-                <Pressable onPress={() => setShowForm(false)} style={[styles.cancelBtn, { borderColor: colors.border }]}>
+                <Pressable onPress={() => { setShowForm(false); setForm(EMPTY_FORM); }} style={[styles.cancelBtn, { borderColor: colors.border }]}>
                   <Text style={[styles.cancelText, { color: colors.mutedForeground }]}>Cancel</Text>
                 </Pressable>
                 <Pressable onPress={handleAdd} style={[styles.saveBtn, { backgroundColor: colors.primary }]}>
@@ -81,11 +75,11 @@ export default function AdminDevotionsScreen() {
               </View>
             </View>
           )}
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>All Devotions ({devotions.length})</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>All Devotions ({devotionals.length})</Text>
         </View>
       }
       renderItem={({ item }) => {
-        const isToday = item.publishDate === new Date().toISOString().split('T')[0];
+        const isToday = item.publishDate === todayStr;
         return (
           <View style={[styles.devCard, { backgroundColor: colors.card, borderLeftWidth: isToday ? 4 : 0, borderLeftColor: colors.gold as string }]}>
             <View style={styles.devCardHeader}>
@@ -95,9 +89,12 @@ export default function AdminDevotionsScreen() {
                   <Text style={[styles.todayBadgeText, { color: colors.goldDark as string }]}>Today</Text>
                 </View>
               )}
+              <Pressable onPress={() => handleDelete(item.id)} style={styles.deleteBtn}>
+                <Feather name="trash-2" size={15} color={colors.destructive} />
+              </Pressable>
             </View>
-            <Text style={[styles.devTitle, { color: colors.foreground }]}>{item.titleEn}</Text>
-            <Text style={[styles.devVerse, { color: colors.gold as string }]}>{item.verseReference}</Text>
+            <Text style={[styles.devTitle, { color: colors.foreground }]}>{item.title}</Text>
+            <Text style={[styles.devVerse, { color: colors.gold as string }]}>{item.scriptureRef}</Text>
           </View>
         );
       }}
@@ -144,6 +141,7 @@ const styles = StyleSheet.create({
   devDate: { fontSize: 12, fontFamily: 'Inter_400Regular' },
   todayBadge: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
   todayBadgeText: { fontSize: 11, fontFamily: 'Inter_700Bold' },
+  deleteBtn: { marginLeft: 'auto', padding: 4 },
   devTitle: { fontSize: 15, fontFamily: 'Inter_600SemiBold', marginBottom: 3 },
   devVerse: { fontSize: 12, fontFamily: 'Inter_500Medium' },
 });

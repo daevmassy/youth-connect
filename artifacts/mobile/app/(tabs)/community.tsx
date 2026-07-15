@@ -1,7 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {
-  Alert,
-  FlatList,
   Platform,
   Pressable,
   ScrollView,
@@ -13,21 +11,47 @@ import {
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
-import { type Question, formatTime } from '@/data/mockData';
+import { useAuth } from '@/context/AuthContext';
+import {
+  useListChatMessages,
+  useSendChatMessage,
+  useListMyQuestions,
+  useSubmitQuestion,
+  type ChatMessageItem,
+  type QuestionItem,
+} from '@workspace/api-client-react';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Tab = 'chat' | 'ask';
-type Category = 'spiritual' | 'social' | 'economical';
+type Tab = 'friends' | 'anonymous' | 'ask';
+
+function formatTime(isoString: string): string {
+  const date = new Date(isoString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days === 1) return 'Yesterday';
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
 
 export default function CommunityScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { t } = useApp();
-  const [activeTab, setActiveTab] = useState<Tab>('chat');
+  const [activeTab, setActiveTab] = useState<Tab>('friends');
   const topPad = insets.top + (Platform.OS === 'web' ? 67 : 0);
+
+  const subtitles: Record<Tab, string> = {
+    friends: 'Chat with the youth group using your real name',
+    anonymous: 'Anonymous — your identity is protected',
+    ask: 'Private — only the Pastor sees your question',
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -35,93 +59,87 @@ export default function CommunityScreen() {
         colors={[colors.navy as string, colors.navyLight as string]}
         style={[styles.header, { paddingTop: topPad + 16 }]}
       >
-        <Text style={[styles.headerTitle, { color: '#fff' }]}>
-          {t('Community', 'Nharaunda')}
-        </Text>
+        <Text style={[styles.headerTitle, { color: '#fff' }]}>Community</Text>
         <View style={[styles.tabSwitcher, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-          <Pressable
-            onPress={() => setActiveTab('chat')}
-            style={[styles.tabBtn, activeTab === 'chat' && { backgroundColor: colors.gold as string }]}
-          >
-            <Feather name="message-circle" size={14} color={activeTab === 'chat' ? colors.navy as string : 'rgba(255,255,255,0.8)'} />
-            <Text style={[styles.tabBtnText, { color: activeTab === 'chat' ? colors.navy as string : 'rgba(255,255,255,0.8)' }]}>
-              {t('Imba', 'Imba Yokutaura')}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setActiveTab('ask')}
-            style={[styles.tabBtn, activeTab === 'ask' && { backgroundColor: colors.gold as string }]}
-          >
-            <Feather name="help-circle" size={14} color={activeTab === 'ask' ? colors.navy as string : 'rgba(255,255,255,0.8)'} />
-            <Text style={[styles.tabBtnText, { color: activeTab === 'ask' ? colors.navy as string : 'rgba(255,255,255,0.8)' }]}>
-              {t('Bvunza Pastor', 'Bvunza Mufundisi')}
-            </Text>
-          </Pressable>
+          <TabButton label="Friends" active={activeTab === 'friends'} onPress={() => setActiveTab('friends')} colors={colors} icon="users" />
+          <TabButton label="Anonymous" active={activeTab === 'anonymous'} onPress={() => setActiveTab('anonymous')} colors={colors} icon="message-circle" />
+          <TabButton label="Ask Pastor" active={activeTab === 'ask'} onPress={() => setActiveTab('ask')} colors={colors} icon="help-circle" />
         </View>
-        <Text style={[styles.headerSub, { color: 'rgba(255,255,255,0.6)' }]}>
-          {activeTab === 'chat'
-            ? t('Anonymous — your identity is protected', 'Pasina zita — zvakachengeteka')
-            : t('Private — only the Pastor sees your question', 'Chakavanzika — Mufundisi oga')}
-        </Text>
+        <Text style={[styles.headerSub, { color: 'rgba(255,255,255,0.6)' }]}>{subtitles[activeTab]}</Text>
       </LinearGradient>
 
-      {activeTab === 'chat' ? <ChatSection /> : <AskSection />}
+      {activeTab === 'ask' ? <AskSection /> : <ChatSection room={activeTab} />}
     </View>
   );
 }
 
-function ChatSection() {
+function TabButton({ label, active, onPress, colors, icon }: {
+  label: string; active: boolean; onPress: () => void; colors: ReturnType<typeof useColors>; icon: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.tabBtn, active && { backgroundColor: colors.gold as string }]}
+    >
+      <Feather name={icon as any} size={13} color={active ? colors.navy as string : 'rgba(255,255,255,0.8)'} />
+      <Text style={[styles.tabBtnText, { color: active ? colors.navy as string : 'rgba(255,255,255,0.8)' }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ChatSection({ room }: { room: 'friends' | 'anonymous' }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { chatMessages, sendChatMessage, flagMessage, userAlias, t } = useApp();
+  const { anonAlias } = useApp();
+  const { user } = useAuth();
+  const { data, refetch } = useListChatMessages(room, { query: { refetchInterval: 4000 } as any });
+  const sendMessage = useSendChatMessage();
   const [text, setText] = useState('');
-  const flatRef = useRef<FlatList>(null);
+  const flatRef = useRef<ScrollView>(null);
 
-  const send = useCallback(() => {
+  const displayName = room === 'friends' ? (user ? `${user.firstName} ${user.lastName}` : 'You') : anonAlias;
+  const messages = data?.messages ?? [];
+
+  const send = useCallback(async () => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    sendChatMessage(trimmed);
     setText('');
+    await sendMessage.mutateAsync({ room, data: { content: trimmed, displayName } });
+    await refetch();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, [text, sendChatMessage]);
+  }, [text, sendMessage, room, displayName, refetch]);
 
   const bottomPad = insets.bottom + (Platform.OS === 'web' ? 84 : 0);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior="padding"
-      keyboardVerticalOffset={0}
-    >
-      <FlatList
+    <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={0}>
+      <ScrollView
         ref={flatRef}
-        data={[...chatMessages].reverse()}
-        inverted
-        keyExtractor={item => item.id}
         contentContainerStyle={[styles.chatList, { paddingBottom: 12 }]}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => <ChatBubble message={item} onFlag={() => flagMessage(item.id)} colors={colors} t={t} />}
-      />
+        onContentSizeChange={() => flatRef.current?.scrollToEnd({ animated: false })}
+      >
+        {messages.map(item => (
+          <ChatBubble key={item.id} message={item} isMe={room === 'friends' ? item.userId === user?.id : item.displayName === anonAlias} colors={colors} />
+        ))}
+      </ScrollView>
       <View style={[styles.inputRow, { backgroundColor: colors.card, paddingBottom: bottomPad + 10, borderTopColor: colors.border }]}>
         <View style={[styles.aliasChip, { backgroundColor: colors.secondary }]}>
-          <Feather name="user-x" size={12} color={colors.mutedForeground} />
-          <Text style={[styles.aliasText, { color: colors.mutedForeground }]} numberOfLines={1}>
-            {userAlias}
-          </Text>
+          <Feather name={room === 'friends' ? 'user' : 'user-x'} size={12} color={colors.mutedForeground} />
+          <Text style={[styles.aliasText, { color: colors.mutedForeground }]} numberOfLines={1}>{displayName}</Text>
         </View>
         <TextInput
           style={[styles.chatInput, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-          placeholder={t('Type a message...', 'Nyora meseji...')}
+          placeholder="Type a message..."
           placeholderTextColor={colors.mutedForeground}
           value={text}
           onChangeText={setText}
           multiline
           maxLength={500}
         />
-        <Pressable
-          onPress={send}
-          style={[styles.sendBtn, { backgroundColor: text.trim() ? colors.primary : colors.muted }]}
-        >
+        <Pressable onPress={send} style={[styles.sendBtn, { backgroundColor: text.trim() ? colors.primary : colors.muted }]}>
           <Feather name="send" size={18} color={text.trim() ? '#fff' : colors.mutedForeground} />
         </Pressable>
       </View>
@@ -129,41 +147,20 @@ function ChatSection() {
   );
 }
 
-function ChatBubble({ message, onFlag, colors, t }: { message: any; onFlag: () => void; colors: ReturnType<typeof useColors>; t: (e: string, s: string) => string }) {
-  const isMe = message.isCurrentUser;
+function ChatBubble({ message, isMe, colors }: { message: ChatMessageItem; isMe: boolean; colors: ReturnType<typeof useColors> }) {
   return (
     <View style={[styles.bubbleWrapper, isMe && styles.bubbleWrapperMe]}>
       {!isMe && (
         <View style={[styles.avatarDot, { backgroundColor: colors.secondary }]}>
-          <Text style={[styles.avatarDotText, { color: colors.primary }]}>
-            {message.aliasName.charAt(0)}
-          </Text>
+          <Text style={[styles.avatarDotText, { color: colors.primary }]}>{message.displayName.charAt(0)}</Text>
         </View>
       )}
       <View style={{ flex: 1, alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-        {!isMe && (
-          <Text style={[styles.aliasName, { color: colors.gold as string }]}>{message.aliasName}</Text>
-        )}
+        {!isMe && <Text style={[styles.aliasName, { color: colors.gold as string }]}>{message.displayName}</Text>}
         <View style={[styles.bubble, { backgroundColor: isMe ? colors.primary : colors.card }]}>
-          <Text style={[styles.bubbleText, { color: isMe ? '#fff' : colors.foreground }]}>
-            {message.messageText}
-          </Text>
+          <Text style={[styles.bubbleText, { color: isMe ? '#fff' : colors.foreground }]}>{message.content}</Text>
         </View>
-        <View style={styles.bubbleMeta}>
-          <Text style={[styles.bubbleTime, { color: colors.mutedForeground }]}>
-            {formatTime(message.createdAt)}
-          </Text>
-          {!isMe && !message.isFlagged && (
-            <Pressable onPress={onFlag} style={styles.flagBtn}>
-              <Feather name="flag" size={12} color={colors.mutedForeground} />
-            </Pressable>
-          )}
-          {message.isFlagged && (
-            <Text style={[styles.flaggedText, { color: colors.destructive }]}>
-              {t('Reported', 'Rikiswa')}
-            </Text>
-          )}
-        </View>
+        <Text style={[styles.bubbleTime, { color: colors.mutedForeground }]}>{formatTime(message.createdAt)}</Text>
       </View>
     </View>
   );
@@ -172,21 +169,22 @@ function ChatBubble({ message, onFlag, colors, t }: { message: any; onFlag: () =
 function AskSection() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { questions, myTicketIds, submitQuestion, t } = useApp();
+  const { data, refetch } = useListMyQuestions();
+  const submitQuestion = useSubmitQuestion();
   const [mode, setMode] = useState<'list' | 'new'>('list');
   const [questionText, setQuestionText] = useState('');
-  const [category, setCategory] = useState<Category>('spiritual');
   const [submittedTicket, setSubmittedTicket] = useState('');
 
-  const myQuestions = questions.filter(q => myTicketIds.includes(q.ticketId));
+  const questions = data?.questions ?? [];
   const bottomPad = insets.bottom + (Platform.OS === 'web' ? 84 : 0);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!questionText.trim()) return;
-    const ticket = submitQuestion(questionText.trim(), category);
-    setSubmittedTicket(ticket);
+    const res = await submitQuestion.mutateAsync({ data: { content: questionText.trim() } });
+    setSubmittedTicket(res.question.ticketCode);
     setQuestionText('');
     setMode('list');
+    await refetch();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
 
@@ -197,52 +195,22 @@ function AskSection() {
           <View style={[styles.ticketSuccess, { backgroundColor: colors.successLight as string, borderColor: colors.success as string }]}>
             <Feather name="check-circle" size={20} color={colors.success as string} />
             <View style={styles.ticketSuccessText}>
-              <Text style={[styles.ticketSuccessTitle, { color: colors.success as string }]}>
-                {t('Question submitted!', 'Mubvunzo watumiwa!')}
-              </Text>
-              <Text style={[styles.ticketId, { color: colors.foreground }]}>
-                {t('Your ticket:', 'Tikiti yako:')} {submittedTicket}
-              </Text>
+              <Text style={[styles.ticketSuccessTitle, { color: colors.success as string }]}>Question submitted!</Text>
+              <Text style={[styles.ticketId, { color: colors.foreground }]}>Your ticket: {submittedTicket}</Text>
             </View>
           </View>
         ) : null}
 
         {mode === 'new' ? (
           <View style={[styles.card, { backgroundColor: colors.card }]}>
-            <Text style={[styles.cardTitle, { color: colors.primary }]}>
-              {t('Ask Your Question', 'Bvunza Mubvunzo Wako')}
-            </Text>
+            <Text style={[styles.cardTitle, { color: colors.primary }]}>Ask Your Question</Text>
             <Text style={[styles.privacyNote, { color: colors.mutedForeground }]}>
-              {t('Your identity is fully protected. The Pastor only sees your question.', 'Zvako zvakachengetwa. Mufundisi anoona mibvunzo chete.')}
+              Only the Pastor sees your question and can answer it here.
             </Text>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
-              {t('Category', 'Chikamu')}
-            </Text>
-            <View style={styles.catRow}>
-              {(['spiritual', 'social', 'economical'] as Category[]).map(cat => (
-                <Pressable
-                  key={cat}
-                  onPress={() => setCategory(cat)}
-                  style={[
-                    styles.catChip,
-                    {
-                      backgroundColor: category === cat ? colors.primary : colors.secondary,
-                      borderColor: category === cat ? colors.primary : colors.border,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.catText, { color: category === cat ? '#fff' : colors.foreground }]}>
-                    {t(cat.charAt(0).toUpperCase() + cat.slice(1), cat === 'spiritual' ? 'Kwomweya' : cat === 'social' ? 'Nharaunda' : 'Zvemari')}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
-              {t('Your question', 'Mubvunzo wako')}
-            </Text>
+            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Your question</Text>
             <TextInput
               style={[styles.textArea, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-              placeholder={t('Type your question here...', 'Nyora mubvunzo wako pano...')}
+              placeholder="Type your question here..."
               placeholderTextColor={colors.mutedForeground}
               value={questionText}
               onChangeText={setQuestionText}
@@ -252,50 +220,31 @@ function AskSection() {
               maxLength={1000}
             />
             <View style={styles.btnRow}>
-              <Pressable
-                onPress={() => setMode('list')}
-                style={[styles.cancelBtn, { borderColor: colors.border }]}
-              >
-                <Text style={[styles.cancelBtnText, { color: colors.mutedForeground }]}>
-                  {t('Cancel', 'Dzoka')}
-                </Text>
+              <Pressable onPress={() => setMode('list')} style={[styles.cancelBtn, { borderColor: colors.border }]}>
+                <Text style={[styles.cancelBtnText, { color: colors.mutedForeground }]}>Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={handleSubmit}
                 style={[styles.submitBtn, { backgroundColor: questionText.trim() ? colors.primary : colors.muted }]}
               >
                 <Feather name="send" size={15} color={questionText.trim() ? '#fff' : colors.mutedForeground} />
-                <Text style={[styles.submitBtnText, { color: questionText.trim() ? '#fff' : colors.mutedForeground }]}>
-                  {t('Submit Anonymously', 'Tumira')}
-                </Text>
+                <Text style={[styles.submitBtnText, { color: questionText.trim() ? '#fff' : colors.mutedForeground }]}>Submit</Text>
               </Pressable>
             </View>
           </View>
         ) : (
           <>
-            <Pressable
-              onPress={() => setMode('new')}
-              style={[styles.askNewBtn, { backgroundColor: colors.primary }]}
-            >
+            <Pressable onPress={() => setMode('new')} style={[styles.askNewBtn, { backgroundColor: colors.primary }]}>
               <Feather name="plus" size={18} color="#fff" />
-              <Text style={styles.askNewBtnText}>
-                {t('Ask a Question', 'Bvunza Chinhu Chako')}
-              </Text>
+              <Text style={styles.askNewBtnText}>Ask a Question</Text>
             </Pressable>
 
-            {myQuestions.length > 0 && (
-              <>
-                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                  {t('Your Questions', 'Mibvunzo Yako')}
-                </Text>
-                {myQuestions.map(q => <QuestionCard key={q.id} question={q} colors={colors} t={t} />)}
-              </>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Your Questions</Text>
+            {questions.length === 0 ? (
+              <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>You haven't asked anything yet.</Text>
+            ) : (
+              questions.map(q => <QuestionCard key={q.id} question={q} colors={colors} />)
             )}
-
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              {t('Answered Questions', 'Mibvunzo Yakabatirirwa')}
-            </Text>
-            {questions.filter(q => q.isAnswered).map(q => <QuestionCard key={q.id} question={q} colors={colors} t={t} />)}
           </>
         )}
       </ScrollView>
@@ -303,50 +252,30 @@ function AskSection() {
   );
 }
 
-function QuestionCard({ question, colors, t }: { question: Question; colors: ReturnType<typeof useColors>; t: (e: string, s: string) => string }) {
-  const [expanded, setExpanded] = useState(false);
+function QuestionCard({ question, colors }: { question: QuestionItem; colors: ReturnType<typeof useColors> }) {
+  const isAnswered = !!question.answer;
   return (
-    <Pressable
-      onPress={() => setExpanded(prev => !prev)}
-      style={[styles.qCard, { backgroundColor: colors.card }]}
-    >
+    <View style={[styles.qCard, { backgroundColor: colors.card }]}>
       <View style={styles.qCardHeader}>
-        <View style={styles.qCardMeta}>
-          <View style={[styles.ticketBadge, { backgroundColor: colors.secondary }]}>
-            <Text style={[styles.ticketBadgeText, { color: colors.primary }]}>{question.ticketId}</Text>
-          </View>
-          <View style={[styles.catBadge, {
-            backgroundColor: question.category === 'spiritual' ? colors.goldLight as string
-              : question.category === 'social' ? '#EDE9FE' : '#DCFCE7'
-          }]}>
-            <Text style={[styles.catBadgeText, {
-              color: question.category === 'spiritual' ? colors.goldDark as string
-                : question.category === 'social' ? '#5B21B6' : '#15803D'
-            }]}>
-              {t(question.category, question.category === 'spiritual' ? 'Kwomweya' : question.category === 'social' ? 'Nharaunda' : 'Zvemari')}
-            </Text>
-          </View>
+        <View style={[styles.ticketBadge, { backgroundColor: colors.secondary }]}>
+          <Text style={[styles.ticketBadgeText, { color: colors.primary }]}>{question.ticketCode}</Text>
         </View>
-        <View style={[styles.statusDot, { backgroundColor: question.isAnswered ? colors.success as string : colors.warning as string }]} />
+        <View style={[styles.statusDot, { backgroundColor: isAnswered ? colors.success as string : colors.warning as string }]} />
       </View>
-      <Text style={[styles.qText, { color: colors.foreground }]} numberOfLines={expanded ? undefined : 2}>
-        {question.questionText}
-      </Text>
-      {question.isAnswered && expanded && question.answerText && (
+      <Text style={[styles.qText, { color: colors.foreground }]}>{question.content}</Text>
+      {isAnswered && (
         <View style={[styles.answerBox, { backgroundColor: colors.goldLight as string, borderLeftColor: colors.gold as string }]}>
-          <Text style={[styles.answerLabel, { color: colors.goldDark as string }]}>
-            {question.answeredByName || 'Pastor'} {t('answered:', 'vapindura:')}
-          </Text>
-          <Text style={[styles.answerText, { color: colors.foreground }]}>{question.answerText}</Text>
+          <Text style={[styles.answerLabel, { color: colors.goldDark as string }]}>Pastor answered:</Text>
+          <Text style={[styles.answerText, { color: colors.foreground }]}>{question.answer}</Text>
         </View>
       )}
       <View style={styles.qCardFooter}>
         <Text style={[styles.qTime, { color: colors.mutedForeground }]}>{formatTime(question.createdAt)}</Text>
-        <Text style={[styles.qStatus, { color: question.isAnswered ? colors.success as string : colors.warning as string }]}>
-          {question.isAnswered ? t('Answered', 'Yakabatirirwa') : t('Awaiting reply', 'Inomirira')}
+        <Text style={[styles.qStatus, { color: isAnswered ? colors.success as string : colors.warning as string }]}>
+          {isAnswered ? 'Answered' : 'Awaiting reply'}
         </Text>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -357,8 +286,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 24, fontFamily: 'Inter_700Bold', marginBottom: 14 },
   headerSub: { fontSize: 12, fontFamily: 'Inter_400Regular', marginTop: 8 },
   tabSwitcher: { flexDirection: 'row', borderRadius: 12, padding: 3 },
-  tabBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 9, borderRadius: 10 },
-  tabBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
+  tabBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 9, borderRadius: 10 },
+  tabBtnText: { fontSize: 11, fontFamily: 'Inter_600SemiBold' },
   chatList: { paddingHorizontal: 14, paddingTop: 12, gap: 12 },
   bubbleWrapper: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
   bubbleWrapperMe: { flexDirection: 'row-reverse' },
@@ -367,12 +296,9 @@ const styles = StyleSheet.create({
   aliasName: { fontSize: 11, fontFamily: 'Inter_600SemiBold', marginBottom: 3, marginLeft: 4 },
   bubble: { maxWidth: '80%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   bubbleText: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 20 },
-  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3, marginHorizontal: 4 },
-  bubbleTime: { fontSize: 11, fontFamily: 'Inter_400Regular' },
-  flagBtn: { padding: 2 },
-  flaggedText: { fontSize: 11, fontFamily: 'Inter_500Medium' },
+  bubbleTime: { fontSize: 11, fontFamily: 'Inter_400Regular', marginTop: 3, marginHorizontal: 4 },
   inputRow: { flexDirection: 'column', gap: 8, paddingHorizontal: 14, paddingTop: 10, borderTopWidth: 1 },
-  aliasChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, maxWidth: 160 },
+  aliasChip: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, maxWidth: 200 },
   aliasText: { fontSize: 11, fontFamily: 'Inter_500Medium' },
   chatInput: { flex: 1, borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, fontFamily: 'Inter_400Regular', maxHeight: 100 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-end' },
@@ -384,9 +310,6 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 18, fontFamily: 'Inter_700Bold', marginBottom: 6 },
   privacyNote: { fontSize: 13, fontFamily: 'Inter_400Regular', marginBottom: 16, lineHeight: 20 },
   fieldLabel: { fontSize: 13, fontFamily: 'Inter_600SemiBold', marginBottom: 8 },
-  catRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  catChip: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10, borderWidth: 1.5 },
-  catText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
   textArea: { borderRadius: 12, borderWidth: 1, padding: 14, fontSize: 14, fontFamily: 'Inter_400Regular', minHeight: 130, marginBottom: 16 },
   btnRow: { flexDirection: 'row', gap: 10 },
   cancelBtn: { flex: 1, borderWidth: 1.5, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
@@ -399,11 +322,8 @@ const styles = StyleSheet.create({
   ticketId: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
   qCard: { borderRadius: 14, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   qCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  qCardMeta: { flexDirection: 'row', gap: 6 },
   ticketBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   ticketBadgeText: { fontSize: 11, fontFamily: 'Inter_700Bold' },
-  catBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  catBadgeText: { fontSize: 11, fontFamily: 'Inter_600SemiBold' },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   qText: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 22, marginBottom: 10 },
   answerBox: { borderLeftWidth: 3, borderRadius: 4, paddingLeft: 12, paddingRight: 8, paddingVertical: 10, marginBottom: 10 },

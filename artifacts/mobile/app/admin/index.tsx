@@ -9,6 +9,12 @@ import {
 } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/context/AppContext';
+import {
+  useListAllQuestions,
+  useListPrayers,
+  useListDevotionals,
+  useListEvents,
+} from '@workspace/api-client-react';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,13 +22,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function AdminIndexScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { questions, prayerRequests, chatMessages, devotions, adminLogout } = useApp();
+  const { adminLogout } = useApp();
+  const { data: questionsData } = useListAllQuestions();
+  const { data: prayersData } = useListPrayers();
+  const { data: devotionalsData } = useListDevotionals();
+  const { data: eventsData } = useListEvents();
 
   const bottomPad = insets.bottom + (Platform.OS === 'web' ? 34 : 0);
 
-  const pendingQuestions = questions.filter(q => !q.isAnswered).length;
-  const flaggedMessages = chatMessages.filter(m => m.isFlagged).length;
-  const todaysDevotion = devotions.find(d => d.publishDate === new Date().toISOString().split('T')[0]);
+  const pendingQuestions = (questionsData?.questions ?? []).filter(q => !q.answer).length;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todaysDevotion = (devotionalsData?.devotionals ?? []).find(d => d.publishDate === todayStr);
 
   const adminItems = [
     {
@@ -35,15 +45,6 @@ export default function AdminIndexScreen() {
       route: '/admin/questions',
     },
     {
-      icon: 'heart',
-      label: 'Prayer Focus',
-      sub: 'Post daily prayer topics',
-      badge: 0,
-      color: '#C0392B',
-      bg: '#FEE2E2',
-      route: '/admin/prayers',
-    },
-    {
       icon: 'book-open',
       label: 'Devotions',
       sub: todaysDevotion ? 'Today posted' : 'No devotion today',
@@ -53,13 +54,13 @@ export default function AdminIndexScreen() {
       route: '/admin/devotions',
     },
     {
-      icon: 'message-circle',
-      label: 'Chat Moderation',
-      sub: `${flaggedMessages} flagged messages`,
-      badge: flaggedMessages,
-      color: colors.primary,
-      bg: colors.secondary,
-      route: '/admin/chat-mod',
+      icon: 'calendar',
+      label: 'Events',
+      sub: `${eventsData?.events.length ?? 0} upcoming`,
+      badge: 0,
+      color: '#059669',
+      bg: '#DCFCE7',
+      route: '/admin/events',
     },
   ];
 
@@ -72,7 +73,7 @@ export default function AdminIndexScreen() {
       <View style={[styles.welcomeCard, { backgroundColor: colors.primary }]}>
         <Feather name="shield" size={24} color={colors.gold as string} />
         <Text style={styles.welcomeTitle}>Pastor Admin Panel</Text>
-        <Text style={styles.welcomeSub}>Manage the Pekuti app for Ruwa City Youth</Text>
+        <Text style={styles.welcomeSub}>Manage Youth Connect for Ruwa City Youth</Text>
       </View>
 
       <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Manage</Text>

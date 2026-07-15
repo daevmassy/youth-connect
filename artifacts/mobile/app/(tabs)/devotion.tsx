@@ -8,46 +8,65 @@ import {
   View,
 } from 'react-native';
 import { useColors } from '@/hooks/useColors';
-import { useApp } from '@/context/AppContext';
-import { DEVOTIONS } from '@/data/mockData';
+import { useListDevotionals } from '@workspace/api-client-react';
 import * as Haptics from 'expo-haptics';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/context/AuthContext';
+
+const STREAK_KEY_PREFIX = 'yc_streak_';
 
 export default function DevotionScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { t, todaysDevotion, streak, incrementStreak, devotions } = useApp();
+  const { user } = useAuth();
+  const { data, isLoading } = useListDevotionals();
+  const [selectedId, setSelectedId] = useState<number | undefined>(undefined);
   const [markedRead, setMarkedRead] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | undefined>(todaysDevotion?.id);
+  const [streak, setStreak] = useState(0);
 
   const topPad = insets.top + (Platform.OS === 'web' ? 67 : 0);
-  const selected = devotions.find(d => d.id === selectedId) ?? todaysDevotion;
+  const devotionals = data?.devotionals ?? [];
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todaysDevotion = devotionals.find(d => d.publishDate === todayStr) ?? devotionals[0];
+  const selected = devotionals.find(d => d.id === selectedId) ?? todaysDevotion;
+
+  React.useEffect(() => {
+    if (!user) return;
+    const key = STREAK_KEY_PREFIX + user.id;
+    AsyncStorage.getItem(key).then(v => {
+      const parsed = v ? JSON.parse(v) : { count: 0, lastDate: '' };
+      setStreak(parsed.count ?? 0);
+      setMarkedRead(parsed.lastDate === todayStr);
+    });
+  }, [user, todayStr]);
 
   async function handleMarkRead() {
-    if (!markedRead) {
-      setMarkedRead(true);
-      await incrementStreak();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
+    if (markedRead || !user) return;
+    const key = STREAK_KEY_PREFIX + user.id;
+    const raw = await AsyncStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : { count: 0, lastDate: '' };
+    const newCount = parsed.count + 1;
+    await AsyncStorage.setItem(key, JSON.stringify({ count: newCount, lastDate: todayStr }));
+    setStreak(newCount);
+    setMarkedRead(true);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <LinearGradient
         colors={[colors.navy as string, colors.navyLight as string]}
         style={[styles.header, { paddingTop: topPad + 16 }]}
       >
         <Text style={[styles.headerTitle, { color: colors.gold as string }]}>
-          {t('Daily Devotion', 'Pekuti YaNhasi')}
+          Daily Devotion
         </Text>
         <View style={[styles.streakRow, { backgroundColor: 'rgba(201,168,76,0.15)' }]}>
           <MaterialCommunityIcons name="fire" size={18} color={colors.gold as string} />
-          <Text style={styles.streakText}>
-            {streak} {t('day streak', 'mazuva akatevedzana')}
-          </Text>
+          <Text style={styles.streakText}>{streak} day streak</Text>
         </View>
       </LinearGradient>
 
@@ -55,77 +74,63 @@ export default function DevotionScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: Platform.OS === 'web' ? 134 : 100 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Past devotions selector */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.daySelector}
-        >
-          {devotions.slice(0, 7).map(dev => {
-            const date = new Date(dev.publishDate);
-            const isToday = dev.publishDate === new Date().toISOString().split('T')[0];
-            const isSelected = dev.id === selectedId;
-            return (
-              <Pressable
-                key={dev.id}
-                onPress={() => setSelectedId(dev.id)}
-                style={[
-                  styles.dayChip,
-                  {
-                    backgroundColor: isSelected ? colors.primary : colors.card,
-                    borderColor: isSelected ? colors.primary : colors.border,
-                  },
-                ]}
-              >
-                <Text style={[styles.dayChipDate, { color: isSelected ? 'rgba(255,255,255,0.7)' : colors.mutedForeground }]}>
-                  {isToday ? t('Today', 'Nhasi') : date.toLocaleDateString('en', { weekday: 'short' })}
-                </Text>
-                <Text style={[styles.dayChipNum, { color: isSelected ? '#fff' : colors.foreground }]}>
-                  {date.getDate()}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        {isLoading && (
+          <Text style={{ color: colors.mutedForeground, textAlign: 'center', marginTop: 40 }}>Loading…</Text>
+        )}
+
+        {devotionals.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.daySelector}
+          >
+            {devotionals.slice(0, 7).map(dev => {
+              const date = new Date(dev.publishDate);
+              const isToday = dev.publishDate === todayStr;
+              const isSelected = dev.id === selected?.id;
+              return (
+                <Pressable
+                  key={dev.id}
+                  onPress={() => setSelectedId(dev.id)}
+                  style={[
+                    styles.dayChip,
+                    {
+                      backgroundColor: isSelected ? colors.primary : colors.card,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.dayChipDate, { color: isSelected ? 'rgba(255,255,255,0.7)' : colors.mutedForeground }]}>
+                    {isToday ? 'Today' : date.toLocaleDateString('en', { weekday: 'short' })}
+                  </Text>
+                  <Text style={[styles.dayChipNum, { color: isSelected ? '#fff' : colors.foreground }]}>
+                    {date.getDate()}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
 
         {selected && (
           <>
-            {/* Title */}
             <View style={[styles.card, { backgroundColor: colors.card }]}>
               <View style={[styles.verseTag, { backgroundColor: colors.goldLight as string }]}>
                 <Feather name="book-open" size={13} color={colors.goldDark as string} />
                 <Text style={[styles.verseTagText, { color: colors.goldDark as string }]}>
-                  {selected.verseReference}
+                  {selected.scriptureRef}
                 </Text>
               </View>
-              <Text style={[styles.devotionTitle, { color: colors.primary }]}>
-                {t(selected.titleEn, selected.titleSn)}
-              </Text>
+              <Text style={[styles.devotionTitle, { color: colors.primary }]}>{selected.title}</Text>
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
-              <Text style={[styles.verseText, { color: colors.foreground }]}>
-                {t(selected.verseTextEn, selected.verseTextSn)}
-              </Text>
+              <Text style={[styles.verseText, { color: colors.foreground }]}>{selected.scriptureText}</Text>
             </View>
 
-            {/* Reflection */}
             <View style={[styles.card, { backgroundColor: colors.card }]}>
-              <SectionLabel icon="feather" label={t('Reflection', 'Kufunga')} colors={colors} />
-              <Text style={[styles.bodyText, { color: colors.foreground }]}>
-                {t(selected.reflectionEn, selected.reflectionSn)}
-              </Text>
+              <SectionLabel icon="feather" label="Reflection" colors={colors} />
+              <Text style={[styles.bodyText, { color: colors.foreground }]}>{selected.body}</Text>
             </View>
 
-            {/* Action Point */}
-            <View style={[styles.card, { backgroundColor: colors.card }]}>
-              <SectionLabel icon="zap" label={t('Action Point', 'Chiito')} colors={colors} />
-              <View style={[styles.actionBox, { backgroundColor: colors.goldLight as string, borderLeftColor: colors.gold as string }]}>
-                <Text style={[styles.actionText, { color: colors.primary }]}>
-                  {t(selected.actionPointEn, selected.actionPointSn)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Mark as Read */}
             {selected.id === todaysDevotion?.id && (
               <Pressable
                 onPress={handleMarkRead}
@@ -145,13 +150,17 @@ export default function DevotionScreen() {
                   color={markedRead ? colors.success as string : '#fff'}
                 />
                 <Text style={[styles.markReadText, { color: markedRead ? colors.success as string : '#fff' }]}>
-                  {markedRead
-                    ? t('Devotion completed! +1 streak', 'Pekuti yapera! +1')
-                    : t('Mark as read (+1 streak)', 'Ronga kuti waverenga (+1)')}
+                  {markedRead ? 'Devotion completed! +1 streak' : 'Mark as read (+1 streak)'}
                 </Text>
               </Pressable>
             )}
           </>
+        )}
+
+        {!isLoading && devotionals.length === 0 && (
+          <Text style={{ color: colors.mutedForeground, textAlign: 'center', marginTop: 40 }}>
+            No devotions yet. Check back soon.
+          </Text>
         )}
       </ScrollView>
     </View>
@@ -187,8 +196,6 @@ const styles = StyleSheet.create({
   sectionLabel: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
   sectionLabelText: { fontSize: 13, fontFamily: 'Inter_700Bold', textTransform: 'uppercase', letterSpacing: 0.8 },
   bodyText: { fontSize: 15, fontFamily: 'Inter_400Regular', lineHeight: 24 },
-  actionBox: { borderLeftWidth: 3, borderRadius: 4, paddingLeft: 14, paddingRight: 10, paddingVertical: 10 },
-  actionText: { fontSize: 15, fontFamily: 'Inter_500Medium', lineHeight: 22 },
   markReadBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, paddingVertical: 16, paddingHorizontal: 24, justifyContent: 'center', marginTop: 4, marginBottom: 8 },
   markReadText: { fontSize: 15, fontFamily: 'Inter_700Bold' },
 });
