@@ -1,0 +1,1 @@
+- [App Storage paths](object-storage-paths.md) — normalized `/objects/uploads/...` URLs differ from FastAPI’s captured `uploads/...` route segment.

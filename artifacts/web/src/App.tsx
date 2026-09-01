@@ -25,6 +25,8 @@ import AdminIndex from './pages/admin/index';
 import AdminDevotions from './pages/admin/devotions';
 import AdminEvents from './pages/admin/events';
 import AdminQuestions from './pages/admin/questions';
+import AdminMusic from './pages/admin/music';
+import AdminStudyGuides from './pages/admin/study-guides';
 
 const queryClient = new QueryClient();
 
@@ -47,6 +49,8 @@ function AuthenticatedApp() {
           <Route path="/admin/devotions" component={AdminDevotions} />
           <Route path="/admin/events" component={AdminEvents} />
           <Route path="/admin/questions" component={AdminQuestions} />
+          <Route path="/admin/music" component={AdminMusic} />
+          <Route path="/admin/study-guides" component={AdminStudyGuides} />
           
           <Route component={NotFound} />
         </Switch>

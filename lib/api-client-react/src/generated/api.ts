@@ -27,16 +27,21 @@ import type {
   ChatRoom,
   CreateDevotionalRequest,
   CreateEventRequest,
+  CreateMusicRequest,
   CreatePrayerRequest,
+  CreateReadingPlanRequest,
   DevotionalResponse,
   DevotionalsResponse,
   EventsResponse,
   HealthStatus,
   LoginRequest,
+  MusicResponse,
+  MusicTrackResponse,
   PrayToggleResult,
   PrayersResponse,
   QuestionResponse,
   QuestionsResponse,
+  ReadingPlanResponse,
   ReadingPlansResponse,
   ReadingProgressItemResponse,
   ReadingProgressResponse,
@@ -45,6 +50,8 @@ import type {
   SendChatMessageRequest,
   SubmitQuestionRequest,
   UpdateProfileRequest,
+  UploadUrlRequest,
+  UploadUrlResponse,
   UserResponse
 } from './api.schemas';
 
@@ -734,6 +741,76 @@ export function useListReadingPlans<TData = Awaited<ReturnType<typeof listReadin
 
 
 
+export const getCreateReadingPlanUrl = () => {
+
+
+
+
+  return `/api/reading-plans`
+}
+
+/**
+ * @summary Create a Bible study guide (admin)
+ */
+export const createReadingPlan = async (createReadingPlanRequest: CreateReadingPlanRequest, options?: RequestInit): Promise<ReadingPlanResponse> => {
+
+  return customFetch<ReadingPlanResponse>(getCreateReadingPlanUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createReadingPlanRequest)
+  }
+);}
+
+
+
+
+export const getCreateReadingPlanMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReadingPlan>>, TError,{data: BodyType<CreateReadingPlanRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createReadingPlan>>, TError,{data: BodyType<CreateReadingPlanRequest>}, TContext> => {
+
+const mutationKey = ['createReadingPlan'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createReadingPlan>>, {data: BodyType<CreateReadingPlanRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createReadingPlan(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateReadingPlanMutationResult = NonNullable<Awaited<ReturnType<typeof createReadingPlan>>>
+    export type CreateReadingPlanMutationBody = BodyType<CreateReadingPlanRequest>
+    export type CreateReadingPlanMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a Bible study guide (admin)
+ */
+export const useCreateReadingPlan = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReadingPlan>>, TError,{data: BodyType<CreateReadingPlanRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createReadingPlan>>,
+        TError,
+        {data: BodyType<CreateReadingPlanRequest>},
+        TContext
+      > => {
+      return useMutation(getCreateReadingPlanMutationOptions(options));
+    }
+
 export const getGetReadingProgressUrl = () => {
 
 
@@ -1027,6 +1104,370 @@ export const useCreatePrayer = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreatePrayerMutationOptions(options));
     }
+
+export const getListMusicUrl = () => {
+
+
+
+
+  return `/api/music`
+}
+
+/**
+ * @summary List worship music
+ */
+export const listMusic = async ( options?: RequestInit): Promise<MusicResponse> => {
+
+  return customFetch<MusicResponse>(getListMusicUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMusicQueryKey = () => {
+    return [
+    `/api/music`
+    ] as const;
+    }
+
+
+export const getListMusicQueryOptions = <TData = Awaited<ReturnType<typeof listMusic>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMusic>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMusicQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMusic>>> = ({ signal }) => listMusic({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMusic>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMusicQueryResult = NonNullable<Awaited<ReturnType<typeof listMusic>>>
+export type ListMusicQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List worship music
+ */
+
+export function useListMusic<TData = Awaited<ReturnType<typeof listMusic>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMusic>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMusicQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateMusicUrl = () => {
+
+
+
+
+  return `/api/music`
+}
+
+/**
+ * @summary Add a worship track (admin)
+ */
+export const createMusic = async (createMusicRequest: CreateMusicRequest, options?: RequestInit): Promise<MusicTrackResponse> => {
+
+  return customFetch<MusicTrackResponse>(getCreateMusicUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createMusicRequest)
+  }
+);}
+
+
+
+
+export const getCreateMusicMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMusic>>, TError,{data: BodyType<CreateMusicRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMusic>>, TError,{data: BodyType<CreateMusicRequest>}, TContext> => {
+
+const mutationKey = ['createMusic'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMusic>>, {data: BodyType<CreateMusicRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMusic(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMusicMutationResult = NonNullable<Awaited<ReturnType<typeof createMusic>>>
+    export type CreateMusicMutationBody = BodyType<CreateMusicRequest>
+    export type CreateMusicMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a worship track (admin)
+ */
+export const useCreateMusic = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMusic>>, TError,{data: BodyType<CreateMusicRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMusic>>,
+        TError,
+        {data: BodyType<CreateMusicRequest>},
+        TContext
+      > => {
+      return useMutation(getCreateMusicMutationOptions(options));
+    }
+
+export const getDeleteMusicUrl = (id: number,) => {
+
+
+
+
+  return `/api/music/${id}`
+}
+
+/**
+ * @summary Delete a worship track (admin)
+ */
+export const deleteMusic = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteMusicUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteMusicMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMusic>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMusic>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteMusic'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMusic>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteMusic(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMusicMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMusic>>>
+
+    export type DeleteMusicMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a worship track (admin)
+ */
+export const useDeleteMusic = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMusic>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMusic>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteMusicMutationOptions(options));
+    }
+
+export const getRequestUploadUrlUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/request-url`
+}
+
+/**
+ * @summary Request a presigned URL for an audio upload
+ */
+export const requestUploadUrl = async (uploadUrlRequest: UploadUrlRequest, options?: RequestInit): Promise<UploadUrlResponse> => {
+
+  return customFetch<UploadUrlResponse>(getRequestUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(uploadUrlRequest)
+  }
+);}
+
+
+
+
+export const getRequestUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,{data: BodyType<UploadUrlRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,{data: BodyType<UploadUrlRequest>}, TContext> => {
+
+const mutationKey = ['requestUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestUploadUrl>>, {data: BodyType<UploadUrlRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestUploadUrl>>>
+    export type RequestUploadUrlMutationBody = BodyType<UploadUrlRequest>
+    export type RequestUploadUrlMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Request a presigned URL for an audio upload
+ */
+export const useRequestUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,{data: BodyType<UploadUrlRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestUploadUrl>>,
+        TError,
+        {data: BodyType<UploadUrlRequest>},
+        TContext
+      > => {
+      return useMutation(getRequestUploadUrlMutationOptions(options));
+    }
+
+export const getGetStorageObjectUrl = (objectPath: string,) => {
+
+
+
+
+  return `/api/storage/objects/${objectPath}`
+}
+
+/**
+ * @summary Serve an uploaded audio file
+ */
+export const getStorageObject = async (objectPath: string, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetStorageObjectUrl(objectPath),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStorageObjectQueryKey = (objectPath: string,) => {
+    return [
+    `/api/storage/objects/${objectPath}`
+    ] as const;
+    }
+
+
+export const getGetStorageObjectQueryOptions = <TData = Awaited<ReturnType<typeof getStorageObject>>, TError = ErrorType<void>>(objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorageObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStorageObjectQueryKey(objectPath);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStorageObject>>> = ({ signal }) => getStorageObject(objectPath, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: objectPath !== null && objectPath !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStorageObject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStorageObjectQueryResult = NonNullable<Awaited<ReturnType<typeof getStorageObject>>>
+export type GetStorageObjectQueryError = ErrorType<void>
+
+
+/**
+ * @summary Serve an uploaded audio file
+ */
+
+export function useGetStorageObject<TData = Awaited<ReturnType<typeof getStorageObject>>, TError = ErrorType<void>>(
+ objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorageObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStorageObjectQueryOptions(objectPath,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getTogglePrayUrl = (id: number,) => {
 

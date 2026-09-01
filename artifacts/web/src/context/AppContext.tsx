@@ -1,6 +1,16 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { getListMusicQueryKey, useListMusic } from '@workspace/api-client-react';
+import { useAuth } from './AuthContext';
 
-export const GOSPEL_TRACKS = [
+export interface GospelTrack {
+  id: string;
+  title: string;
+  artist: string;
+  duration: number;
+  audioUrl: string | null;
+}
+
+export const GOSPEL_TRACKS: GospelTrack[] = [
   { id: "1", title: "Amazing Grace", artist: "Traditional", duration: 214, audioUrl: null },
   { id: "2", title: "How Great Thou Art", artist: "Stuart K. Hine", duration: 248, audioUrl: null },
   { id: "3", title: "Blessed Assurance", artist: "Fanny Crosby", duration: 196, audioUrl: null },
@@ -25,7 +35,7 @@ interface AppContextType {
   tracks: typeof GOSPEL_TRACKS;
   currentTrack: typeof GOSPEL_TRACKS[0] | null;
   isPlaying: boolean;
-  setCurrentTrack: (track: typeof GOSPEL_TRACKS[0] | null) => void;
+  setCurrentTrack: (track: GospelTrack | null) => void;
   togglePlayPause: () => void;
   currentTime: number;
   playNext: () => void;
@@ -36,12 +46,35 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [anonAlias, setAnonAlias] = useState<string>('');
-  
-  const [currentTrack, setCurrentTrack] = useState<typeof GOSPEL_TRACKS[0] | null>(null);
+  const [currentTrack, setCurrentTrack] = useState<GospelTrack | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const { data: musicData } = useListMusic({
+    query: {
+      queryKey: getListMusicQueryKey(),
+      enabled: isAuthenticated,
+      staleTime: 5 * 60 * 1000,
+    },
+  });
+
+  const tracks = useMemo<GospelTrack[]>(
+    () => [
+      ...GOSPEL_TRACKS,
+      ...(musicData?.tracks ?? []).map((track) => ({
+        id: `server-${track.id}`,
+        title: track.title,
+        artist: track.artist,
+        duration: track.duration,
+        audioUrl: track.audioUrl,
+      })),
+    ],
+    [musicData?.tracks],
+  );
 
   useEffect(() => {
     let storedAlias = localStorage.getItem('yc_anon_alias');
@@ -68,6 +101,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [isPlaying, currentTrack]);
 
+  useEffect(() => {
+    if (typeof Audio === 'undefined') return;
+    const audio = audioRef.current ?? new Audio();
+    audioRef.current = audio;
+
+    if (currentTrack?.audioUrl) {
+      audio.src = currentTrack.audioUrl;
+      audio.currentTime = currentTime;
+      audio.onended = () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      };
+      if (isPlaying) {
+        void audio.play().catch(() => setIsPlaying(false));
+      }
+    } else {
+      audio.pause();
+      audio.removeAttribute('src');
+    }
+  }, [currentTrack?.id]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack?.audioUrl) return;
+    if (isPlaying) {
+      void audio.play().catch(() => setIsPlaying(false));
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying, currentTrack?.audioUrl]);
+
   const handleSetAdmin = (password: string) => {
     if (password === 'PastorYC2026') {
       setIsAdmin(true);
@@ -78,7 +142,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const togglePlayPause = () => {
     if (!currentTrack) {
-      setCurrentTrack(GOSPEL_TRACKS[0]);
+      setCurrentTrack(tracks[0]);
       setIsPlaying(true);
     } else {
       setIsPlaying(!isPlaying);
@@ -94,20 +158,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const playNext = () => {
     if (!currentTrack) return;
-    const idx = GOSPEL_TRACKS.findIndex((t) => t.id === currentTrack.id);
-    const nextIdx = (idx + 1) % GOSPEL_TRACKS.length;
-    handleSetCurrentTrack(GOSPEL_TRACKS[nextIdx]);
+    const idx = tracks.findIndex((t) => t.id === currentTrack.id);
+    const nextIdx = (idx + 1) % tracks.length;
+    handleSetCurrentTrack(tracks[nextIdx]);
   };
 
   const playPrev = () => {
     if (!currentTrack) return;
-    const idx = GOSPEL_TRACKS.findIndex((t) => t.id === currentTrack.id);
-    const prevIdx = (idx - 1 + GOSPEL_TRACKS.length) % GOSPEL_TRACKS.length;
-    handleSetCurrentTrack(GOSPEL_TRACKS[prevIdx]);
+    const idx = tracks.findIndex((t) => t.id === currentTrack.id);
+    const prevIdx = (idx - 1 + tracks.length) % tracks.length;
+    handleSetCurrentTrack(tracks[prevIdx]);
   };
 
   const seekTo = (time: number) => {
     setCurrentTime(time);
+    if (audioRef.current && currentTrack?.audioUrl) {
+      audioRef.current.currentTime = time;
+    }
   };
 
   return (
@@ -116,7 +183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isAdmin,
         setAdmin: handleSetAdmin,
         anonAlias,
-        tracks: GOSPEL_TRACKS,
+        tracks,
         currentTrack,
         isPlaying,
         setCurrentTrack: handleSetCurrentTrack,

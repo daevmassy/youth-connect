@@ -93,6 +93,22 @@ export interface ReadingPlansResponse {
   plans: ReadingPlan[];
 }
 
+export interface ReadingPlanResponse {
+  plan: ReadingPlan;
+}
+
+export interface ReadingPlanDayInput {
+  dayNumber: number;
+  passage: string;
+  reflection?: string;
+}
+
+export interface CreateReadingPlanRequest {
+  title: string;
+  description?: string;
+  days: ReadingPlanDayInput[];
+}
+
 export interface ReadingProgressItem {
   id: number;
   userId: number;
@@ -212,5 +228,40 @@ export interface SubmitQuestionRequest {
 
 export interface QuestionResponse {
   question: QuestionItem;
+}
+
+export interface MusicTrack {
+  id: number;
+  title: string;
+  artist: string;
+  duration: number;
+  audioUrl: string;
+  createdAt: string;
+}
+
+export interface MusicResponse {
+  tracks: MusicTrack[];
+}
+
+export interface MusicTrackResponse {
+  track: MusicTrack;
+}
+
+export interface CreateMusicRequest {
+  title: string;
+  artist: string;
+  duration: number;
+  audioPath: string;
+}
+
+export interface UploadUrlRequest {
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
 }
 

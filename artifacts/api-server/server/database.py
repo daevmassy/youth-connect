@@ -124,6 +124,15 @@ def create_tables():
         created_at TIMESTAMP DEFAULT NOW() NOT NULL,
         answered_at TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS music_tracks (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        artist TEXT NOT NULL,
+        duration INTEGER NOT NULL DEFAULT 0,
+        audio_path TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+    );
     """
     with db_cursor(commit=True) as cur:
         cur.execute(ddl)

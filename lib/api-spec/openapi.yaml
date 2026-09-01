@@ -22,6 +22,10 @@ tags:
     description: Youth events
   - name: chat
     description: Chat rooms and pastor questions
+  - name: music
+    description: Worship music and audio tracks
+  - name: storage
+    description: Audio file uploads and serving
 paths:
   /healthz:
     get:
@@ -162,6 +166,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReadingPlansResponse"
+    post:
+      operationId: createReadingPlan
+      tags: [reading-plans]
+      summary: Create a Bible study guide (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReadingPlanRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadingPlanResponse"
 
   /reading-plans/progress:
     get:
@@ -220,6 +241,92 @@ paths:
       responses:
         "201":
           description: Created
+
+  /music:
+    get:
+      operationId: listMusic
+      tags: [music]
+      summary: List worship music
+      responses:
+        "200":
+          description: Music tracks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MusicResponse"
+    post:
+      operationId: createMusic
+      tags: [music]
+      summary: Add a worship track (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMusicRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MusicTrackResponse"
+
+  /music/{id}:
+    delete:
+      operationId: deleteMusic
+      tags: [music]
+      summary: Delete a worship track (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request a presigned URL for an audio upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+
+  /storage/objects/{objectPath}:
+    get:
+      operationId: getStorageObject
+      tags: [storage]
+      summary: Serve an uploaded audio file
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audio file
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Object not found
 
   /prayers/{id}/pray:
     post:
@@ -568,6 +675,37 @@ components:
             $ref: "#/components/schemas/ReadingPlan"
       required: [plans]
 
+    ReadingPlanResponse:
+      type: object
+      properties:
+        plan:
+          $ref: "#/components/schemas/ReadingPlan"
+      required: [plan]
+
+    ReadingPlanDayInput:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+        passage:
+          type: string
+        reflection:
+          type: string
+      required: [dayNumber, passage]
+
+    CreateReadingPlanRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadingPlanDayInput"
+      required: [title, days]
+
     ReadingProgressItem:
       type: object
       properties:
@@ -798,3 +936,71 @@ components:
         question:
           $ref: "#/components/schemas/QuestionItem"
       required: [question]
+
+    MusicTrack:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        artist:
+          type: string
+        duration:
+          type: integer
+        audioUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, artist, duration, audioUrl, createdAt]
+
+    MusicResponse:
+      type: object
+      properties:
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/MusicTrack"
+      required: [tracks]
+
+    MusicTrackResponse:
+      type: object
+      properties:
+        track:
+          $ref: "#/components/schemas/MusicTrack"
+      required: [track]
+
+    CreateMusicRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        artist:
+          type: string
+        duration:
+          type: integer
+        audioPath:
+          type: string
+      required: [title, artist, duration, audioPath]
+
+    UploadUrlRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+      required: [name, size, contentType]
+
+    UploadUrlResponse:
+      type: object
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+      required: [uploadURL, objectPath]

@@ -1,4 +1,5 @@
 import { useListReadingPlans, useGetReadingProgress, useCompleteReadingDay, getGetReadingProgressQueryKey } from '@workspace/api-client-react';
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,8 @@ import { Progress } from '@/components/ui/progress';
 
 export default function ReadingPlans() {
   const queryClient = useQueryClient();
+  const [openDayId, setOpenDayId] = useState<number | null>(null);
+  const [openedDayIds, setOpenedDayIds] = useState<Set<number>>(new Set());
   const { data: plansData, isLoading: plansLoading } = useListReadingPlans();
   const { data: progressData, isLoading: progressLoading } = useGetReadingProgress();
   const completeDay = useCompleteReadingDay();
@@ -16,22 +19,6 @@ export default function ReadingPlans() {
   const completedDayIds = new Set(progressData?.progress?.filter(p => p.completed).map(p => p.planDayId) || []);
 
   const handleComplete = (dayId: number) => {
-    // Optimistic update locally
-    queryClient.setQueryData(getGetReadingProgressQueryKey(), (old: any) => {
-      if (!old) return old;
-      const exists = old.progress.find((p: any) => p.planDayId === dayId);
-      if (exists) {
-        return {
-          ...old,
-          progress: old.progress.map((p: any) => p.planDayId === dayId ? { ...p, completed: true } : p)
-        };
-      }
-      return {
-        ...old,
-        progress: [...old.progress, { id: Date.now(), planDayId: dayId, completed: true, completedAt: new Date().toISOString() }]
-      };
-    });
-
     completeDay.mutate(
       { dayId },
       {
@@ -40,6 +27,14 @@ export default function ReadingPlans() {
         }
       }
     );
+  };
+
+  const handleOpenVerse = (dayId: number) => {
+    setOpenDayId((current) => (current === dayId ? null : dayId));
+    if (!completedDayIds.has(dayId) && !openedDayIds.has(dayId)) {
+      setOpenedDayIds((current) => new Set(current).add(dayId));
+      handleComplete(dayId);
+    }
   };
 
   if (plansLoading || progressLoading) {
@@ -61,7 +56,7 @@ export default function ReadingPlans() {
       <div className="space-y-8">
         {plans.map(plan => {
           const totalDays = plan.days.length;
-          const completedCount = plan.days.filter(d => completedDayIds.has(d.id)).length;
+           const completedCount = plan.days.filter(d => completedDayIds.has(d.id) || openedDayIds.has(d.id)).length;
           const progressPercent = totalDays > 0 ? Math.round((completedCount / totalDays) * 100) : 0;
 
           return (
@@ -83,10 +78,20 @@ export default function ReadingPlans() {
               
               <CardContent className="p-0">
                 <div className="divide-y">
-                  {plan.days.sort((a, b) => a.dayNumber - b.dayNumber).map(day => {
-                    const isComplete = completedDayIds.has(day.id);
+                   {[...plan.days].sort((a, b) => a.dayNumber - b.dayNumber).map(day => {
+                     const isComplete = completedDayIds.has(day.id) || openedDayIds.has(day.id);
+                     const isOpen = openDayId === day.id;
                     return (
-                      <div key={day.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                       <div key={day.id} className={cn("p-4 hover:bg-muted/30 transition-colors", isOpen && "bg-primary/5")}>
+                         <div
+                           role="button"
+                           tabIndex={0}
+                           onClick={() => handleOpenVerse(day.id)}
+                           onKeyDown={(event) => {
+                             if (event.key === 'Enter' || event.key === ' ') handleOpenVerse(day.id);
+                           }}
+                           className="flex items-center justify-between cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                         >
                         <div className="flex items-center gap-4">
                           <div className={cn(
                             "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2",
@@ -105,15 +110,18 @@ export default function ReadingPlans() {
                             )}
                           </div>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className={cn("rounded-full", isComplete && "text-secondary hover:text-secondary")}
-                          onClick={() => !isComplete && handleComplete(day.id)}
-                          disabled={isComplete || completeDay.isPending}
-                        >
-                          {isComplete ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6 text-muted-foreground" />}
-                        </Button>
+                         {isComplete ? <CheckCircle2 className="w-6 h-6 text-secondary shrink-0" /> : <Circle className="w-6 h-6 text-muted-foreground shrink-0" />}
+                         </div>
+                         {isOpen && (
+                           <div className="ml-14 mt-3 rounded-xl border border-primary/15 bg-background p-4 space-y-2">
+                             <p className="text-sm font-semibold text-primary">Verse opened</p>
+                             <p className="text-sm leading-6">{day.passage}</p>
+                             {day.reflection && <p className="text-sm text-muted-foreground leading-6">{day.reflection}</p>}
+                             <p className="text-xs font-medium text-secondary">
+                               {completeDay.isPending && !completedDayIds.has(day.id) ? 'Saving your read status…' : 'Marked as read'}
+                             </p>
+                           </div>
+                         )}
                       </div>
                     );
                   })}

@@ -4,7 +4,7 @@ import { Link, useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Lock, FileText, Calendar, MessageSquareQuote } from 'lucide-react';
+import { Lock, FileText, Calendar, MessageSquareQuote, Music2, BookOpen } from 'lucide-react';
 
 export default function AdminIndex() {
   const { isAdmin, setAdmin } = useAppContext();
@@ -54,6 +54,8 @@ export default function AdminIndex() {
     { href: '/admin/devotions', label: 'Manage Devotionals', icon: FileText, desc: 'Create and delete daily readings' },
     { href: '/admin/events', label: 'Manage Events', icon: Calendar, desc: 'Schedule new youth gatherings' },
     { href: '/admin/questions', label: 'Answer Questions', icon: MessageSquareQuote, desc: 'Respond to anonymous user questions' },
+    { href: '/admin/music', label: 'Manage Music', icon: Music2, desc: 'Upload worship music and audio files' },
+    { href: '/admin/study-guides', label: 'Study Guides', icon: BookOpen, desc: 'Create reading plans and verse guides' },
   ];
 
   return (
@@ -62,7 +64,7 @@ export default function AdminIndex() {
         <h1 className="text-3xl font-serif text-primary">Admin Dashboard</h1>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sections.map(section => (
           <Card key={section.href} className="hover-elevate border-border">
             <CardContent className="p-6">
