@@ -114,6 +114,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
+
+  /auth/profile-photo/request-url:
+    post:
+      operationId: requestProfilePhotoUploadUrl
+      tags: [auth]
+      summary: Request a profile photo upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfilePhotoUploadRequest"
+      responses:
+        "200":
+          description: Profile photo upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
     patch:
       operationId: updateMe
       tags: [auth]
@@ -550,6 +569,9 @@ components:
           type: string
         bio:
           type: string
+        avatarUrl:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -589,6 +611,20 @@ components:
           type: string
         bio:
           type: string
+        avatarPath:
+          type: string
+          description: Uploaded profile photo object path, or an empty string to remove it
+
+    ProfilePhotoUploadRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+      required: [name, size, contentType]
 
     AuthResponse:
       type: object

@@ -14,7 +14,8 @@ export default function MusicPage() {
     playNext, 
     playPrev,
     setCurrentTrack,
-    seekTo
+    seekTo,
+    playbackError,
   } = useAppContext();
 
   return (
@@ -39,6 +40,7 @@ export default function MusicPage() {
             <p className="text-muted-foreground text-sm mt-1 truncate">
               {currentTrack?.artist || '...'}
             </p>
+            {playbackError && <p className="text-sm text-destructive mt-3">{playbackError}</p>}
           </div>
 
           <div className="w-full space-y-3 mb-8">
@@ -90,6 +92,11 @@ export default function MusicPage() {
         <div className="bg-card border rounded-3xl p-2 md:p-4 h-full flex flex-col">
           <h3 className="px-4 py-3 font-semibold text-lg border-b">Hymns & Favorites</h3>
           <div className="overflow-y-auto flex-1 py-2">
+            {tracks.length === 0 && (
+              <p className="px-4 py-8 text-sm text-muted-foreground text-center">
+                Worship music is being prepared. Check back soon.
+              </p>
+            )}
             {tracks.map((track, idx) => {
               const isCurrent = currentTrack?.id === track.id;
               return (

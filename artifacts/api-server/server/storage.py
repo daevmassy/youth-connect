@@ -64,6 +64,23 @@ def request_audio_upload(name: str, size: int, content_type: str) -> dict:
     }
 
 
+def request_profile_photo_upload(name: str, size: int, content_type: str) -> dict:
+    if not name.strip() or size <= 0:
+        raise HTTPException(400, "A valid profile photo is required.")
+    if size > 10 * 1024 * 1024:
+        raise HTTPException(400, "Profile photos must be 10 MB or smaller.")
+    if content_type.lower() not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTPException(400, "Profile photos must be JPG, PNG, or WebP images.")
+
+    bucket_name, private_prefix = _storage_location()
+    object_id = str(uuid4())
+    object_name = f"{private_prefix}/uploads/{object_id}"
+    return {
+        "uploadURL": _sign_object_url(bucket_name, object_name, "PUT", 900),
+        "objectPath": f"/objects/uploads/{object_id}",
+    }
+
+
 def get_audio_url(object_path: str) -> str:
     normalized = object_path.strip("/")
     if not normalized.startswith("uploads/") or ".." in normalized:

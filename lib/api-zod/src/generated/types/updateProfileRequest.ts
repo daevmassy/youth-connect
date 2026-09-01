@@ -10,4 +10,6 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   bio?: string;
+  /** Uploaded profile photo object path, or an empty string to remove it */
+  avatarPath?: string;
 }

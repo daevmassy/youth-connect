@@ -6,6 +6,7 @@ import os
 
 from ..database import db_cursor
 from ..auth import sign_token, require_auth
+from ..storage import request_profile_photo_upload
 
 router = APIRouter()
 
@@ -45,10 +46,17 @@ class AdminLoginRequest(BaseModel):
     password: str
 
 
+class ProfilePhotoUploadRequest(BaseModel):
+    name: str
+    size: int
+    contentType: str
+
+
 class UpdateProfileRequest(BaseModel):
     firstName: str | None = None
     lastName: str | None = None
     bio: str | None = None
+    avatarPath: str | None = None
 
 
 def _public_user(row: dict) -> dict:
@@ -59,6 +67,7 @@ def _public_user(row: dict) -> dict:
         "username": row["username"],
         "email": row["email"],
         "bio": row.get("bio") or "",
+        "avatarUrl": f"/api/storage{row['avatar_path']}" if row.get("avatar_path") else None,
         "createdAt": row["created_at"],
     }
 
@@ -123,6 +132,14 @@ def admin_login(body: AdminLoginRequest):
     return {"token": sign_token(0, is_admin=True), "isAdmin": True}
 
 
+@router.post("/auth/profile-photo/request-url")
+def request_profile_photo_upload_url(
+    body: ProfilePhotoUploadRequest,
+    user_id: int = Depends(require_auth),
+):
+    return request_profile_photo_upload(body.name, body.size, body.contentType)
+
+
 @router.get("/auth/me")
 def get_me(user_id: int = Depends(require_auth)):
     with db_cursor() as cur:
@@ -142,6 +159,10 @@ def update_me(body: UpdateProfileRequest, user_id: int = Depends(require_auth)):
         updates["last_name"] = body.lastName.strip()
     if body.bio is not None:
         updates["bio"] = body.bio
+    if body.avatarPath is not None:
+        if body.avatarPath and not body.avatarPath.startswith("/objects/uploads/"):
+            raise HTTPException(400, "A valid uploaded profile photo is required.")
+        updates["avatar_path"] = body.avatarPath or None
 
     if not updates:
         with db_cursor() as cur:

@@ -32,6 +32,7 @@ export * from './musicTrackResponse';
 export * from './prayerRequestItem';
 export * from './prayersResponse';
 export * from './prayToggleResult';
+export * from './profilePhotoUploadRequest';
 export * from './questionItem';
 export * from './questionResponse';
 export * from './questionsResponse';

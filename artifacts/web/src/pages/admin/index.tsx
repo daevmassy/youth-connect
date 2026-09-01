@@ -1,27 +1,22 @@
 import { useAppContext } from '@/context/AppContext';
 import { Link, useLocation } from 'wouter';
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, FileText, Calendar, MessageSquareQuote, Music2, BookOpen } from 'lucide-react';
 
 export default function AdminIndex() {
   const { isAdmin } = useAppContext();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isAdmin) setLocation('/login');
+  }, [isAdmin, setLocation]);
 
   if (!isAdmin) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Lock className="w-6 h-6 text-muted-foreground" />
-            </div>
-            <CardTitle>Admin Login Required</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4 text-center">Use the private admin entry on the login screen to continue.</p>
-            <Button asChild className="w-full"><Link href="/admin-login">Open admin login</Link></Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-[80vh] flex items-center justify-center bg-background">
+        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
       </div>
     );
   }

@@ -37,6 +37,7 @@ export const RegisterResponse = zod.object({
   "username": zod.string(),
   "email": zod.string(),
   "bio": zod.string().optional(),
+  "avatarUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 })
@@ -59,6 +60,7 @@ export const LoginResponse = zod.object({
   "username": zod.string(),
   "email": zod.string(),
   "bio": zod.string().optional(),
+  "avatarUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 })
@@ -88,8 +90,24 @@ export const GetMeResponse = zod.object({
   "username": zod.string(),
   "email": zod.string(),
   "bio": zod.string().optional(),
+  "avatarUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
+})
+
+
+/**
+ * @summary Request a profile photo upload URL
+ */
+export const RequestProfilePhotoUploadUrlBody = zod.object({
+  "name": zod.string(),
+  "size": zod.number(),
+  "contentType": zod.string()
+})
+
+export const RequestProfilePhotoUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string()
 })
 
 
@@ -99,7 +117,8 @@ export const GetMeResponse = zod.object({
 export const UpdateMeBody = zod.object({
   "firstName": zod.string().optional(),
   "lastName": zod.string().optional(),
-  "bio": zod.string().optional()
+  "bio": zod.string().optional(),
+  "avatarPath": zod.string().optional().describe('Uploaded profile photo object path, or an empty string to remove it')
 })
 
 export const UpdateMeResponse = zod.object({
@@ -110,6 +129,7 @@ export const UpdateMeResponse = zod.object({
   "username": zod.string(),
   "email": zod.string(),
   "bio": zod.string().optional(),
+  "avatarUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 })

@@ -41,6 +41,7 @@ import type {
   MusicTrackResponse,
   PrayToggleResult,
   PrayersResponse,
+  ProfilePhotoUploadRequest,
   QuestionResponse,
   QuestionsResponse,
   ReadingPlanResponse,
@@ -449,12 +450,82 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
 
 
 
+export const getRequestProfilePhotoUploadUrlUrl = () => {
+
+
+
+
+  return `/api/auth/profile-photo/request-url`
+}
+
+/**
+ * @summary Request a profile photo upload URL
+ */
+export const requestProfilePhotoUploadUrl = async (profilePhotoUploadRequest: ProfilePhotoUploadRequest, options?: RequestInit): Promise<UploadUrlResponse> => {
+
+  return customFetch<UploadUrlResponse>(getRequestProfilePhotoUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(profilePhotoUploadRequest)
+  }
+);}
+
+
+
+
+export const getRequestProfilePhotoUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestProfilePhotoUploadUrl>>, TError,{data: BodyType<ProfilePhotoUploadRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestProfilePhotoUploadUrl>>, TError,{data: BodyType<ProfilePhotoUploadRequest>}, TContext> => {
+
+const mutationKey = ['requestProfilePhotoUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestProfilePhotoUploadUrl>>, {data: BodyType<ProfilePhotoUploadRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestProfilePhotoUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestProfilePhotoUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestProfilePhotoUploadUrl>>>
+    export type RequestProfilePhotoUploadUrlMutationBody = BodyType<ProfilePhotoUploadRequest>
+    export type RequestProfilePhotoUploadUrlMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Request a profile photo upload URL
+ */
+export const useRequestProfilePhotoUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestProfilePhotoUploadUrl>>, TError,{data: BodyType<ProfilePhotoUploadRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestProfilePhotoUploadUrl>>,
+        TError,
+        {data: BodyType<ProfilePhotoUploadRequest>},
+        TContext
+      > => {
+      return useMutation(getRequestProfilePhotoUploadUrlMutationOptions(options));
+    }
+
 export const getUpdateMeUrl = () => {
 
 
 
 
-  return `/api/auth/me`
+  return `/api/auth/profile-photo/request-url`
 }
 
 /**

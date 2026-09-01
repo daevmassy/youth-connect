@@ -40,6 +40,7 @@ def create_tables():
         bio TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT NOW() NOT NULL
     );
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_path TEXT DEFAULT '';
 
     CREATE TABLE IF NOT EXISTS devotionals (
         id SERIAL PRIMARY KEY,

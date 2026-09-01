@@ -10,14 +10,6 @@ export interface GospelTrack {
   audioUrl: string | null;
 }
 
-export const GOSPEL_TRACKS: GospelTrack[] = [
-  { id: "1", title: "Amazing Grace", artist: "Traditional", duration: 214, audioUrl: null },
-  { id: "2", title: "How Great Thou Art", artist: "Stuart K. Hine", duration: 248, audioUrl: null },
-  { id: "3", title: "Blessed Assurance", artist: "Fanny Crosby", duration: 196, audioUrl: null },
-  { id: "4", title: "Great Is Thy Faithfulness", artist: "Thomas Chisholm", duration: 231, audioUrl: null },
-  { id: "5", title: "It Is Well", artist: "Horatio Spafford", duration: 203, audioUrl: null },
-];
-
 const ADJECTIVES = ["Swift", "Gentle", "Brave", "Quiet", "Bright", "Loyal", "Kind", "Calm", "Fierce", "Noble"];
 const ANIMALS = ["Dove", "Lion", "Lamb", "Eagle", "Hart", "Stag", "Sparrow", "Owl", "Hawk", "Fish"];
 
@@ -31,9 +23,10 @@ function generateAnonAlias() {
 interface AppContextType {
   isAdmin: boolean;
   anonAlias: string;
-  tracks: typeof GOSPEL_TRACKS;
-  currentTrack: typeof GOSPEL_TRACKS[0] | null;
+  tracks: GospelTrack[];
+  currentTrack: GospelTrack | null;
   isPlaying: boolean;
+  playbackError: string | null;
   setCurrentTrack: (track: GospelTrack | null) => void;
   togglePlayPause: () => void;
   currentTime: number;
@@ -50,6 +43,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<GospelTrack | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: musicData } = useListMusic({
@@ -62,7 +56,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const tracks = useMemo<GospelTrack[]>(
     () => [
-      ...GOSPEL_TRACKS,
       ...(musicData?.tracks ?? []).map((track) => ({
         id: `server-${track.id}`,
         title: track.title,
@@ -84,47 +77,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isPlaying && currentTrack) {
-      interval = setInterval(() => {
-        setCurrentTime((prev) => {
-          if (prev >= currentTrack.duration) {
-            setIsPlaying(false);
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, currentTrack]);
-
-  useEffect(() => {
     if (typeof Audio === 'undefined') return;
     const audio = audioRef.current ?? new Audio();
     audioRef.current = audio;
 
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+    const onError = () => {
+      setIsPlaying(false);
+      setPlaybackError('This audio file could not be played. Try another track.');
+    };
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
+    setPlaybackError(null);
+
     if (currentTrack?.audioUrl) {
+      audio.pause();
       audio.src = currentTrack.audioUrl;
-      audio.currentTime = currentTime;
-      audio.onended = () => {
-        setIsPlaying(false);
-        setCurrentTime(0);
-      };
+      audio.preload = 'auto';
+      audio.load();
       if (isPlaying) {
-        void audio.play().catch(() => setIsPlaying(false));
+        void audio.play().catch(() => {
+          setIsPlaying(false);
+          setPlaybackError('Playback was blocked. Press play again to start the track.');
+        });
       }
     } else {
       audio.pause();
       audio.removeAttribute('src');
+      audio.load();
     }
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
+    };
   }, [currentTrack?.id]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack?.audioUrl) return;
     if (isPlaying) {
-      void audio.play().catch(() => setIsPlaying(false));
+      void audio.play().catch(() => {
+        setIsPlaying(false);
+        setPlaybackError('Playback was blocked. Press play again to start the track.');
+      });
     } else {
       audio.pause();
     }
@@ -132,29 +135,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const togglePlayPause = () => {
     if (!currentTrack) {
-      setCurrentTrack(tracks[0]);
-      setIsPlaying(true);
+      if (tracks[0]) {
+        handleSetCurrentTrack(tracks[0]);
+      }
     } else {
       setIsPlaying(!isPlaying);
     }
   };
 
-  const handleSetCurrentTrack = (track: typeof GOSPEL_TRACKS[0] | null) => {
+  const handleSetCurrentTrack = (track: GospelTrack | null) => {
     setCurrentTrack(track);
     setCurrentTime(0);
+    setPlaybackError(null);
     if (track) setIsPlaying(true);
     else setIsPlaying(false);
   };
 
   const playNext = () => {
-    if (!currentTrack) return;
+    if (!currentTrack || tracks.length < 2) return;
     const idx = tracks.findIndex((t) => t.id === currentTrack.id);
     const nextIdx = (idx + 1) % tracks.length;
     handleSetCurrentTrack(tracks[nextIdx]);
   };
 
   const playPrev = () => {
-    if (!currentTrack) return;
+    if (!currentTrack || tracks.length < 2) return;
     const idx = tracks.findIndex((t) => t.id === currentTrack.id);
     const prevIdx = (idx - 1 + tracks.length) % tracks.length;
     handleSetCurrentTrack(tracks[prevIdx]);
@@ -175,6 +180,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         tracks,
         currentTrack,
         isPlaying,
+        playbackError,
         setCurrentTrack: handleSetCurrentTrack,
         togglePlayPause,
         currentTime,

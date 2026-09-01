@@ -16,6 +16,7 @@ export interface User {
   username: string;
   email: string;
   bio?: string;
+  avatarUrl?: string | null;
   createdAt: string;
 }
 
@@ -37,6 +38,14 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   bio?: string;
+  /** Uploaded profile photo object path, or an empty string to remove it */
+  avatarPath?: string;
+}
+
+export interface ProfilePhotoUploadRequest {
+  name: string;
+  size: number;
+  contentType: string;
 }
 
 export interface AuthResponse {
