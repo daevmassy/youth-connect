@@ -79,6 +79,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
 
+  /auth/admin-login:
+    post:
+      operationId: adminLogin
+      tags: [auth]
+      summary: Sign in to the administrator area
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginRequest"
+      responses:
+        "200":
+          description: Administrator session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAuthResponse"
+        "401":
+          description: Invalid administrator password
+        "503":
+          description: Administrator password is not configured
+
   /auth/me:
     get:
       operationId: getMe
@@ -575,6 +598,22 @@ components:
         user:
           $ref: "#/components/schemas/User"
       required: [token, user]
+
+    AdminLoginRequest:
+      type: object
+      properties:
+        password:
+          type: string
+      required: [password]
+
+    AdminAuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        isAdmin:
+          type: boolean
+      required: [token, isAdmin]
 
     UserResponse:
       type: object

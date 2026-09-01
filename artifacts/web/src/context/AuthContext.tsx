@@ -7,17 +7,34 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (token: string, user: User) => void;
+  adminLogin: (token: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isAdminAuthenticated: boolean;
   isLoading: boolean;
   updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const ADMIN_USER: User = {
+  id: 0,
+  firstName: 'Admin',
+  lastName: '',
+  username: 'admin',
+  email: '',
+  bio: '',
+  createdAt: '',
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem('yc_token'));
-  const [user, setUser] = useState<User | null>(null);
+  const [isAdminSession, setIsAdminSession] = useState(
+    localStorage.getItem('yc_admin_session') === 'true',
+  );
+  const [user, setUser] = useState<User | null>(() =>
+    localStorage.getItem('yc_admin_session') === 'true' ? ADMIN_USER : null,
+  );
 
   // Set the token getter for api calls
   useEffect(() => {
@@ -27,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data, isLoading } = useGetMe({
     query: {
       queryKey: getGetMeQueryKey(),
-      enabled: !!token,
+      enabled: !!token && !isAdminSession,
       retry: false,
     },
   });
@@ -35,23 +52,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (data?.user) {
       setUser(data.user);
-    } else if (data === undefined && !isLoading && token) {
+    } else if (data === undefined && !isLoading && token && !isAdminSession) {
       // Failed to get user (e.g. invalid token)
       setToken(null);
       localStorage.removeItem('yc_token');
     }
-  }, [data, isLoading, token]);
+  }, [data, isLoading, token, isAdminSession]);
 
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);
+    setIsAdminSession(false);
     localStorage.setItem('yc_token', newToken);
+    localStorage.removeItem('yc_admin_session');
+  };
+
+  const adminLogin = (newToken: string) => {
+    setToken(newToken);
+    setUser(ADMIN_USER);
+    setIsAdminSession(true);
+    localStorage.setItem('yc_token', newToken);
+    localStorage.setItem('yc_admin_session', 'true');
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('yc_token');
+    localStorage.removeItem('yc_admin_session');
+    setIsAdminSession(false);
   };
 
   const updateUser = (updatedUser: User) => {
@@ -64,8 +93,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         token,
         login,
+        adminLogin,
         logout,
-        isAuthenticated: !!token && !!user,
+        isAuthenticated: !!token && (!!user || isAdminSession),
+        isAdminAuthenticated: isAdminSession,
         isLoading,
         updateUser
       }}

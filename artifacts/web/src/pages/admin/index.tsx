@@ -1,26 +1,11 @@
-import { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Link, useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Lock, FileText, Calendar, MessageSquareQuote, Music2, BookOpen } from 'lucide-react';
 
 export default function AdminIndex() {
-  const { isAdmin, setAdmin } = useAppContext();
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
-  const [, setLocation] = useLocation();
-
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (setAdmin(password)) {
-      setError(false);
-    } else {
-      setError(true);
-      setPassword('');
-    }
-  };
+  const { isAdmin } = useAppContext();
 
   if (!isAdmin) {
     return (
@@ -30,20 +15,11 @@ export default function AdminIndex() {
             <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
               <Lock className="w-6 h-6 text-muted-foreground" />
             </div>
-            <CardTitle>Admin Access</CardTitle>
+            <CardTitle>Admin Login Required</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleUnlock} className="space-y-4">
-              <Input 
-                type="password" 
-                placeholder="Enter pastoral password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={error ? "border-destructive" : ""}
-              />
-              {error && <p className="text-xs text-destructive">Incorrect password</p>}
-              <Button type="submit" className="w-full">Unlock Dashboard</Button>
-            </form>
+            <p className="text-sm text-muted-foreground mb-4 text-center">Use the private admin entry on the login screen to continue.</p>
+            <Button asChild className="w-full"><Link href="/admin-login">Open admin login</Link></Button>
           </CardContent>
         </Card>
       </div>

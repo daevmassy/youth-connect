@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 import bcrypt
+import hmac
+import os
 
 from ..database import db_cursor
 from ..auth import sign_token, require_auth
@@ -36,6 +38,10 @@ class RegisterRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     identifier: str
+    password: str
+
+
+class AdminLoginRequest(BaseModel):
     password: str
 
 
@@ -105,6 +111,16 @@ def login(body: LoginRequest):
     user = dict(row)
     token = sign_token(user["id"])
     return {"token": token, "user": _public_user(user)}
+
+
+@router.post("/auth/admin-login")
+def admin_login(body: AdminLoginRequest):
+    configured_password = os.environ.get("ADMIN_PASSWORD")
+    if not configured_password:
+        raise HTTPException(503, "Admin password is not configured. Add ADMIN_PASSWORD in Replit Secrets.")
+    if not hmac.compare_digest(body.password, configured_password):
+        raise HTTPException(401, "Invalid administrator password.")
+    return {"token": sign_token(0, is_admin=True), "isAdmin": True}
 
 
 @router.get("/auth/me")

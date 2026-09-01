@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..database import db_cursor
-from ..auth import require_auth
+from ..auth import require_auth, require_admin
 
 router = APIRouter()
 
@@ -50,7 +50,7 @@ def list_reading_plans(user_id: int = Depends(require_auth)):
 
 
 @router.post("/reading-plans", status_code=201)
-def create_reading_plan(body: CreateReadingPlanRequest, user_id: int = Depends(require_auth)):
+def create_reading_plan(body: CreateReadingPlanRequest, user_id: int = Depends(require_admin)):
     if not body.title.strip():
         raise HTTPException(400, "A study guide title is required.")
     if not body.days:

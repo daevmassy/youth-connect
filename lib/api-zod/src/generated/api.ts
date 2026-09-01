@@ -65,6 +65,19 @@ export const LoginResponse = zod.object({
 
 
 /**
+ * @summary Sign in to the administrator area
+ */
+export const AdminLoginBody = zod.object({
+  "password": zod.string()
+})
+
+export const AdminLoginResponse = zod.object({
+  "token": zod.string(),
+  "isAdmin": zod.boolean()
+})
+
+
+/**
  * @summary Get the current user's profile
  */
 export const GetMeResponse = zod.object({

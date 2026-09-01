@@ -11,6 +11,7 @@ import { Layout } from './components/layout';
 import NotFound from '@/pages/not-found';
 import Login from './pages/login';
 import Register from './pages/register';
+import AdminLogin from './pages/admin-login';
 import Home from './pages/home';
 import Devotion from './pages/devotion';
 import PrayerWall from './pages/prayer';
@@ -64,6 +65,7 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/admin-login" component={AdminLogin} />
       <Route component={AuthenticatedApp} />
     </Switch>
   );

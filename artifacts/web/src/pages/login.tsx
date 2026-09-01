@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef } from 'react';
 import { useLocation, Link } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Cross, Church } from 'lucide-react';
+import { Church } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
@@ -22,6 +22,17 @@ export default function Login() {
   const { login } = useAuth();
   const { toast } = useToast();
   const loginMutation = useLogin();
+  const lastLogoTap = useRef(0);
+
+  const handleLogoTap = () => {
+    const now = Date.now();
+    if (now - lastLogoTap.current < 450) {
+      lastLogoTap.current = 0;
+      setLocation('/admin-login');
+      return;
+    }
+    lastLogoTap.current = now;
+  };
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -54,9 +65,14 @@ export default function Login() {
     <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-16 h-16 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+          <button
+            type="button"
+            aria-label="Youth Connect logo"
+            onClick={handleLogoTap}
+            className="w-16 h-16 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center mb-4 shadow-lg cursor-default"
+          >
             <Church className="w-8 h-8" />
-          </div>
+          </button>
           <h1 className="text-3xl font-serif text-primary tracking-tight">Youth Connect</h1>
           <p className="text-muted-foreground">Welcome back to fellowship.</p>
         </div>

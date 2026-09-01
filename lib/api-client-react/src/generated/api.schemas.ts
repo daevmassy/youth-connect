@@ -44,6 +44,15 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface AdminLoginRequest {
+  password: string;
+}
+
+export interface AdminAuthResponse {
+  token: string;
+  isAdmin: boolean;
+}
+
 export interface UserResponse {
   user: User;
 }

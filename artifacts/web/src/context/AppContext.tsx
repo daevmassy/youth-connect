@@ -30,7 +30,6 @@ function generateAnonAlias() {
 
 interface AppContextType {
   isAdmin: boolean;
-  setAdmin: (password: string) => boolean;
   anonAlias: string;
   tracks: typeof GOSPEL_TRACKS;
   currentTrack: typeof GOSPEL_TRACKS[0] | null;
@@ -46,8 +45,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAuthenticated, isAdminAuthenticated } = useAuth();
   const [anonAlias, setAnonAlias] = useState<string>('');
   const [currentTrack, setCurrentTrack] = useState<GospelTrack | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -132,14 +130,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isPlaying, currentTrack?.audioUrl]);
 
-  const handleSetAdmin = (password: string) => {
-    if (password === 'PastorYC2026') {
-      setIsAdmin(true);
-      return true;
-    }
-    return false;
-  };
-
   const togglePlayPause = () => {
     if (!currentTrack) {
       setCurrentTrack(tracks[0]);
@@ -180,8 +170,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider
       value={{
-        isAdmin,
-        setAdmin: handleSetAdmin,
+        isAdmin: isAdminAuthenticated,
         anonAlias,
         tracks,
         currentTrack,

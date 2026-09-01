@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminAuthResponse';
+export * from './adminLoginRequest';
 export * from './answerQuestionRequest';
 export * from './authResponse';
 export * from './chatMessageItem';
