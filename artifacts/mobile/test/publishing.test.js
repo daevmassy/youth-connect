@@ -97,6 +97,20 @@ test('production server serves health checks, a platform manifest, and its bundl
   );
   const bundleContents = 'console.log("generated iOS bundle");';
   const bundlePath = path.join(staticRoot, bundleRelativePath);
+  const iosAssetRelativePath = path.join(
+    timestamp,
+    '_expo',
+    'static',
+    'js',
+    'ios',
+    'assets',
+    'ios-icon.png',
+  );
+  const iosAssetContents = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  );
+  const iosAssetPath = path.join(staticRoot, iosAssetRelativePath);
   const androidBundleRelativePath = path.join(
     timestamp,
     '_expo',
@@ -133,6 +147,14 @@ test('production server serves health checks, a platform manifest, and its bundl
     extra: {
       expoClient: {},
     },
+    assets: [
+      {
+        hash: 'ios-asset-test',
+        name: 'ios-icon',
+        type: 'png',
+        url: `/mobile/${iosAssetRelativePath}`,
+      },
+    ],
   };
   const androidManifest = {
     ...manifest,
@@ -152,6 +174,8 @@ test('production server serves health checks, a platform manifest, and its bundl
 
   fs.mkdirSync(path.dirname(bundlePath), { recursive: true });
   fs.writeFileSync(bundlePath, bundleContents);
+  fs.mkdirSync(path.dirname(iosAssetPath), { recursive: true });
+  fs.writeFileSync(iosAssetPath, iosAssetContents);
   fs.mkdirSync(path.dirname(androidBundlePath), { recursive: true });
   fs.writeFileSync(androidBundlePath, androidBundleContents);
   fs.mkdirSync(path.dirname(androidAssetPath), { recursive: true });
@@ -203,6 +227,15 @@ test('production server serves health checks, a platform manifest, and its bundl
     );
     assert.equal(bundleResponse.status, 200);
     assert.equal(await bundleResponse.text(), bundleContents);
+
+    const iosAssetUrl = new URL(manifest.assets[0].url, serverUrl);
+    const iosAssetResponse = await fetch(iosAssetUrl);
+    assert.equal(iosAssetResponse.status, 200);
+    assert.equal(iosAssetResponse.headers.get('content-type'), 'image/png');
+    assert.deepEqual(
+      Buffer.from(await iosAssetResponse.arrayBuffer()),
+      iosAssetContents,
+    );
 
     const androidManifestResponse = await fetch(
       `${serverUrl}/mobile/manifest`,
