@@ -148,18 +148,6 @@ function isPortAvailable(port) {
   });
 }
 
-async function findAvailableMetroPort() {
-  for (let port = metroPort; port < metroPort + 20; port += 1) {
-    if (await isPortAvailable(port)) {
-      return port;
-    }
-  }
-
-  throw new Error(
-    `Could not find an available Metro port starting at ${metroPort}`,
-  );
-}
-
 function getExpoPublicReplId() {
   return process.env.REPL_ID || process.env.EXPO_PUBLIC_REPL_ID;
 }
@@ -668,10 +656,17 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((error) => {
-  console.error('Build failed:', error.message);
-  if (metroProcess) {
-    metroProcess.kill();
-  }
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('Build failed:', error.message);
+    if (metroProcess) {
+      metroProcess.kill();
+    }
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  findAvailableMetroPort,
+  isPortAvailable,
+};
