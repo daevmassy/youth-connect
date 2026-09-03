@@ -55,6 +55,49 @@ async function waitForServer(url, child) {
   throw new Error(`Production server did not become ready at ${url}`);
 }
 
+async function assertPublishedManifestAssets(
+  platform,
+  manifest,
+  serverUrl,
+  expectedAssetsByUrl,
+) {
+  assert.ok(
+    Array.isArray(manifest.assets),
+    `${platform} manifest should declare an assets array`,
+  );
+  assert.equal(
+    manifest.assets.length,
+    expectedAssetsByUrl.size,
+    `${platform} manifest asset count should match the expected published assets`,
+  );
+
+  for (const [index, asset] of manifest.assets.entries()) {
+    const description = `${platform} manifest asset ${asset.name || asset.url || index}`;
+    const expectedAsset = expectedAssetsByUrl.get(asset.url);
+    assert.ok(
+      expectedAsset,
+      `${description} has no expected fixture for ${asset.url}`,
+    );
+
+    const assetResponse = await fetch(new URL(asset.url, serverUrl));
+    assert.equal(
+      assetResponse.status,
+      200,
+      `${description} at ${asset.url} should return a successful response`,
+    );
+    assert.equal(
+      assetResponse.headers.get('content-type'),
+      expectedAsset.contentType,
+      `${description} at ${asset.url} should return ${expectedAsset.contentType}`,
+    );
+    assert.deepEqual(
+      Buffer.from(await assetResponse.arrayBuffer()),
+      expectedAsset.contents,
+      `${description} at ${asset.url} should return the generated asset contents`,
+    );
+  }
+}
+
 test('build tooling selects another Metro port when 8081 is occupied', async () => {
   const occupiedPort = await listenOnPort(8081);
   const previousMetroPort = process.env.EXPO_METRO_PORT;
@@ -97,20 +140,10 @@ test('production server serves health checks, a platform manifest, and its bundl
   );
   const bundleContents = 'console.log("generated iOS bundle");';
   const bundlePath = path.join(staticRoot, bundleRelativePath);
-  const iosAssetRelativePath = path.join(
-    timestamp,
-    '_expo',
-    'static',
-    'js',
-    'ios',
-    'assets',
-    'ios-icon.png',
-  );
-  const iosAssetContents = Buffer.from(
+  const assetContents = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     'base64',
   );
-  const iosAssetPath = path.join(staticRoot, iosAssetRelativePath);
   const androidBundleRelativePath = path.join(
     timestamp,
     '_expo',
@@ -124,20 +157,72 @@ test('production server serves health checks, a platform manifest, and its bundl
     staticRoot,
     androidBundleRelativePath,
   );
-  const androidAssetRelativePath = path.join(
-    timestamp,
-    '_expo',
-    'static',
-    'js',
-    'android',
-    'assets',
-    'android-icon.png',
-  );
-  const androidAssetContents = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-    'base64',
-  );
-  const androidAssetPath = path.join(staticRoot, androidAssetRelativePath);
+  const createAssetRecords = (platform, assets) =>
+    assets.map((asset) => ({
+      ...asset,
+      relativePath: path.join(
+        timestamp,
+        '_expo',
+        'static',
+        'js',
+        platform,
+        'assets',
+        asset.filename,
+      ),
+    }));
+  const createManifestAssets = (assets) =>
+    assets.map(({ hash, name, type, relativePath }) => ({
+      hash,
+      name,
+      type,
+      url: `/mobile/${relativePath}`,
+    }));
+  const getExpectedAssetsByUrl = (assets) =>
+    new Map(
+      assets.map((asset) => [
+        `/mobile/${asset.relativePath}`,
+        {
+          contentType: asset.contentType,
+          contents: asset.contents,
+        },
+      ]),
+    );
+  const iosAssetRecords = createAssetRecords('ios', [
+    {
+      hash: 'ios-asset-test',
+      name: 'ios-icon',
+      type: 'png',
+      filename: 'ios-icon.png',
+      contentType: 'image/png',
+      contents: assetContents,
+    },
+    {
+      hash: 'ios-splash-test',
+      name: 'ios-splash',
+      type: 'png',
+      filename: 'ios-splash.png',
+      contentType: 'image/png',
+      contents: Buffer.from('generated iOS splash asset'),
+    },
+  ]);
+  const androidAssetRecords = createAssetRecords('android', [
+    {
+      hash: 'android-asset-test',
+      name: 'android-icon',
+      type: 'png',
+      filename: 'android-icon.png',
+      contentType: 'image/png',
+      contents: assetContents,
+    },
+    {
+      hash: 'android-splash-test',
+      name: 'android-splash',
+      type: 'png',
+      filename: 'android-splash.png',
+      contentType: 'image/png',
+      contents: Buffer.from('generated Android splash asset'),
+    },
+  ]);
   const manifest = {
     launchAsset: {
       key: 'bundle-test-build',
@@ -147,14 +232,7 @@ test('production server serves health checks, a platform manifest, and its bundl
     extra: {
       expoClient: {},
     },
-    assets: [
-      {
-        hash: 'ios-asset-test',
-        name: 'ios-icon',
-        type: 'png',
-        url: `/mobile/${iosAssetRelativePath}`,
-      },
-    ],
+    assets: createManifestAssets(iosAssetRecords),
   };
   const androidManifest = {
     ...manifest,
@@ -162,24 +240,18 @@ test('production server serves health checks, a platform manifest, and its bundl
       ...manifest.launchAsset,
       url: `/mobile/${androidBundleRelativePath}`,
     },
-    assets: [
-      {
-        hash: 'android-asset-test',
-        name: 'android-icon',
-        type: 'png',
-        url: `/mobile/${androidAssetRelativePath}`,
-      },
-    ],
+    assets: createManifestAssets(androidAssetRecords),
   };
 
   fs.mkdirSync(path.dirname(bundlePath), { recursive: true });
   fs.writeFileSync(bundlePath, bundleContents);
-  fs.mkdirSync(path.dirname(iosAssetPath), { recursive: true });
-  fs.writeFileSync(iosAssetPath, iosAssetContents);
   fs.mkdirSync(path.dirname(androidBundlePath), { recursive: true });
   fs.writeFileSync(androidBundlePath, androidBundleContents);
-  fs.mkdirSync(path.dirname(androidAssetPath), { recursive: true });
-  fs.writeFileSync(androidAssetPath, androidAssetContents);
+  for (const asset of [...iosAssetRecords, ...androidAssetRecords]) {
+    const assetPath = path.join(staticRoot, asset.relativePath);
+    fs.mkdirSync(path.dirname(assetPath), { recursive: true });
+    fs.writeFileSync(assetPath, asset.contents);
+  }
   fs.mkdirSync(path.join(staticRoot, 'ios'), { recursive: true });
   fs.writeFileSync(
     path.join(staticRoot, 'ios', 'manifest.json'),
@@ -228,13 +300,11 @@ test('production server serves health checks, a platform manifest, and its bundl
     assert.equal(bundleResponse.status, 200);
     assert.equal(await bundleResponse.text(), bundleContents);
 
-    const iosAssetUrl = new URL(manifest.assets[0].url, serverUrl);
-    const iosAssetResponse = await fetch(iosAssetUrl);
-    assert.equal(iosAssetResponse.status, 200);
-    assert.equal(iosAssetResponse.headers.get('content-type'), 'image/png');
-    assert.deepEqual(
-      Buffer.from(await iosAssetResponse.arrayBuffer()),
-      iosAssetContents,
+    await assertPublishedManifestAssets(
+      'ios',
+      manifest,
+      serverUrl,
+      getExpectedAssetsByUrl(iosAssetRecords),
     );
 
     const androidManifestResponse = await fetch(
@@ -250,16 +320,11 @@ test('production server serves health checks, a platform manifest, and its bundl
     assert.equal(androidBundleResponse.status, 200);
     assert.equal(await androidBundleResponse.text(), androidBundleContents);
 
-    const androidAssetUrl = new URL(
-      androidManifest.assets[0].url,
+    await assertPublishedManifestAssets(
+      'android',
+      androidManifest,
       serverUrl,
-    );
-    const androidAssetResponse = await fetch(androidAssetUrl);
-    assert.equal(androidAssetResponse.status, 200);
-    assert.equal(androidAssetResponse.headers.get('content-type'), 'image/png');
-    assert.deepEqual(
-      Buffer.from(await androidAssetResponse.arrayBuffer()),
-      androidAssetContents,
+      getExpectedAssetsByUrl(androidAssetRecords),
     );
   } finally {
     child.kill('SIGTERM');
