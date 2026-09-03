@@ -6,7 +6,11 @@ const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
 
 let metroProcess = null;
-let metroPort = Number.parseInt(process.env.EXPO_METRO_PORT || '8081', 10);
+let metroPort = null;
+const configuredMetroPort = Number.parseInt(
+  process.env.EXPO_METRO_PORT || '',
+  10,
+);
 
 const projectRoot = path.resolve(__dirname, '..');
 
@@ -117,6 +121,10 @@ function clearMetroCache() {
 }
 
 async function checkMetroHealth() {
+  if (!metroPort) {
+    return false;
+  }
+
   try {
     const response = await fetch(`http://localhost:${metroPort}/status`, {
       signal: AbortSignal.timeout(5000),
@@ -156,14 +164,52 @@ function getExpoPublicReplId() {
   return process.env.REPL_ID || process.env.EXPO_PUBLIC_REPL_ID;
 }
 
-async function startMetro(expoPublicDomain, expoPublicReplId) {
-  const isRunning = await checkMetroHealth();
-  if (isRunning) {
-    console.log(`Metro already running on port ${metroPort}`);
-    return;
+function findAvailablePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      const port =
+        address && typeof address === 'object' ? address.port : null;
+
+      if (!port) {
+        server.close(() =>
+          reject(new Error('Could not determine free Metro port')),
+        );
+        return;
+      }
+
+      server.close((error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(port);
+        }
+      });
+    });
+  });
+}
+async function findAvailableMetroPort() {
+  if (Number.isInteger(configuredMetroPort) && configuredMetroPort > 0) {
+    for (let port = configuredMetroPort; port < configuredMetroPort + 20; port += 1) {
+      if (await isPortAvailable(port)) {
+        return port;
+      }
+    }
+
+    throw new Error(
+      `Could not find an available Metro port starting at ${configuredMetroPort}`,
+    );
   }
 
+  return findAvailablePort();
+}
+
+async function startMetro(expoPublicDomain, expoPublicReplId) {
   metroPort = await findAvailableMetroPort();
+
   console.log('Starting Metro...');
   console.log(`Using Metro port ${metroPort}`);
   console.log(`Setting EXPO_PUBLIC_DOMAIN=${expoPublicDomain}`);
