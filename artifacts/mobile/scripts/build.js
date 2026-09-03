@@ -586,7 +586,43 @@ function updateBundleUrls(timestamp, baseUrl) {
   console.log('Updated bundle URLs');
 }
 
-function updateManifests(manifests, timestamp, baseUrl, assetsByHash) {
+function mapManifestAssets(platform, manifest, assetsByHash) {
+  if (!Array.isArray(manifest.assets)) {
+    return [];
+  }
+
+  return manifest.assets.map((asset, index) => {
+    const hash = asset && asset.hash;
+    const assetInfo = hash ? assetsByHash.get(hash) : undefined;
+
+    if (!assetInfo) {
+      const identity =
+        asset?.name || asset?.url || asset?.type || `index ${index}`;
+      const hashDescription = hash || 'missing hash';
+      throw new Error(
+        `Cannot map ${platform} manifest asset ${identity} ` +
+          `(hash: ${hashDescription}) to a copied file`,
+      );
+    }
+
+    return assetInfo;
+  });
+}
+
+function updateManifests(
+  manifests,
+  timestamp,
+  baseUrl,
+  assetsByHash,
+  staticBuildRoot = path.join(projectRoot, 'static-build'),
+) {
+  // Validate every platform before writing either manifest. This prevents a
+  // partially publishable build when only one platform has a missing asset.
+  const mappedAssets = {
+    ios: mapManifestAssets('ios', manifests.ios, assetsByHash),
+    android: mapManifestAssets('android', manifests.android, assetsByHash),
+  };
+
   const updateForPlatform = (platform, manifest) => {
     if (!manifest.launchAsset || !manifest.extra) {
       exitWithError(`Malformed manifest for ${platform}`);
@@ -603,22 +639,15 @@ function updateManifests(manifests, timestamp, baseUrl, assetsByHash) {
       baseUrl.replace('https://', '') + '/' + platform;
     manifest.extra.expoGo.packagerOpts.dev = false;
 
-    if (manifest.assets && manifest.assets.length > 0) {
-      manifest.assets.forEach((asset) => {
-        if (!asset.url) return;
-
-        const hash = asset.hash;
-        if (!hash) return;
-
-        const assetInfo = assetsByHash.get(hash);
-        if (!assetInfo) return;
-
+    if (Array.isArray(manifest.assets)) {
+      manifest.assets.forEach((asset, index) => {
+        const assetInfo = mappedAssets[platform][index];
         asset.url = `${baseUrl}${basePath}/${timestamp}/_expo/static/js/${assetInfo.relativePath}/${assetInfo.filename}`;
       });
     }
 
     fs.writeFileSync(
-      path.join(projectRoot, 'static-build', platform, 'manifest.json'),
+      path.join(staticBuildRoot, platform, 'manifest.json'),
       JSON.stringify(manifest, null, 2),
     );
   };
@@ -702,5 +731,7 @@ if (require.main === module) {
 module.exports = {
   findAvailableMetroPort,
   isPortAvailable,
+  mapManifestAssets,
+  updateManifests,
   runExpoCompatibilityCheck,
 };

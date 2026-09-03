@@ -9,6 +9,7 @@ const test = require('node:test');
 
 const BUILD_SCRIPT = path.resolve(__dirname, '..', 'scripts', 'build.js');
 const SERVER_SCRIPT = path.resolve(__dirname, '..', 'server', 'serve.js');
+const { mapManifestAssets, updateManifests } = require(BUILD_SCRIPT);
 
 function listenOnPort(port) {
   return new Promise((resolve, reject) => {
@@ -122,6 +123,116 @@ test('build tooling selects another Metro port when 8081 is occupied', async () 
     } else {
       process.env.EXPO_METRO_PORT = previousMetroPort;
     }
+  }
+});
+
+test('build tooling fails before writing manifests when an asset is not copied', () => {
+  const staticBuildRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'pekuti-mobile-manifest-build-'),
+  );
+  const manifests = {
+    ios: {
+      launchAsset: { url: 'https://old.example/ios-bundle.js' },
+      extra: { expoClient: {}, expoGo: { packagerOpts: {} } },
+      assets: [
+        {
+          hash: 'missing-ios-asset',
+          name: 'missing-icon',
+          type: 'png',
+          url: '/old/missing-icon.png',
+        },
+      ],
+    },
+    android: {
+      launchAsset: { url: 'https://old.example/android-bundle.js' },
+      extra: { expoClient: {}, expoGo: { packagerOpts: {} } },
+      assets: [],
+    },
+  };
+
+  try {
+    assert.throws(
+      () =>
+        updateManifests(
+          manifests,
+          '1700000000000-test-build',
+          'https://example.com',
+          new Map(),
+          staticBuildRoot,
+        ),
+      /Cannot map ios manifest asset missing-icon \(hash: missing-ios-asset\) to a copied file/,
+    );
+    assert.equal(
+      fs.existsSync(path.join(staticBuildRoot, 'ios', 'manifest.json')),
+      false,
+    );
+    assert.equal(
+      fs.existsSync(path.join(staticBuildRoot, 'android', 'manifest.json')),
+      false,
+    );
+  } finally {
+    fs.rmSync(staticBuildRoot, { recursive: true, force: true });
+  }
+});
+
+test('build tooling maps copied manifest assets to published URLs', () => {
+  const staticBuildRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'pekuti-mobile-manifest-build-'),
+  );
+  const manifests = {
+    ios: {
+      launchAsset: { url: 'https://old.example/ios-bundle.js' },
+      extra: { expoClient: {}, expoGo: { packagerOpts: {} } },
+      assets: [
+        {
+          hash: 'ios-asset',
+          name: 'icon',
+          type: 'png',
+          url: '/old/icon.png',
+        },
+      ],
+    },
+    android: {
+      launchAsset: { url: 'https://old.example/android-bundle.js' },
+      extra: { expoClient: {}, expoGo: { packagerOpts: {} } },
+      assets: [],
+    },
+  };
+  const copiedAsset = {
+    relativePath: 'assets',
+    filename: 'icon.png',
+  };
+
+  try {
+    fs.mkdirSync(path.join(staticBuildRoot, 'ios'), { recursive: true });
+    fs.mkdirSync(path.join(staticBuildRoot, 'android'), { recursive: true });
+    assert.deepEqual(
+      mapManifestAssets('ios', manifests.ios, new Map([['ios-asset', copiedAsset]])),
+      [copiedAsset],
+    );
+    updateManifests(
+      manifests,
+      '1700000000000-test-build',
+      'https://example.com',
+      new Map([['ios-asset', copiedAsset]]),
+      staticBuildRoot,
+    );
+
+    assert.equal(
+      manifests.ios.assets[0].url,
+      'https://example.com/1700000000000-test-build/_expo/static/js/assets/icon.png',
+    );
+    assert.deepEqual(
+      JSON.parse(
+        fs.readFileSync(
+          path.join(staticBuildRoot, 'ios', 'manifest.json'),
+          'utf8',
+        ),
+      ),
+      manifests.ios,
+    );
+  } finally {
+    fs.rmSync(staticBuildRoot, { recursive: true, force: true });
   }
 });
 
