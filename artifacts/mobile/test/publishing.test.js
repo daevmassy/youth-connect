@@ -110,6 +110,20 @@ test('production server serves health checks, a platform manifest, and its bundl
     staticRoot,
     androidBundleRelativePath,
   );
+  const androidAssetRelativePath = path.join(
+    timestamp,
+    '_expo',
+    'static',
+    'js',
+    'android',
+    'assets',
+    'android-icon.png',
+  );
+  const androidAssetContents = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  );
+  const androidAssetPath = path.join(staticRoot, androidAssetRelativePath);
   const manifest = {
     launchAsset: {
       key: 'bundle-test-build',
@@ -126,12 +140,22 @@ test('production server serves health checks, a platform manifest, and its bundl
       ...manifest.launchAsset,
       url: `/mobile/${androidBundleRelativePath}`,
     },
+    assets: [
+      {
+        hash: 'android-asset-test',
+        name: 'android-icon',
+        type: 'png',
+        url: `/mobile/${androidAssetRelativePath}`,
+      },
+    ],
   };
 
   fs.mkdirSync(path.dirname(bundlePath), { recursive: true });
   fs.writeFileSync(bundlePath, bundleContents);
   fs.mkdirSync(path.dirname(androidBundlePath), { recursive: true });
   fs.writeFileSync(androidBundlePath, androidBundleContents);
+  fs.mkdirSync(path.dirname(androidAssetPath), { recursive: true });
+  fs.writeFileSync(androidAssetPath, androidAssetContents);
   fs.mkdirSync(path.join(staticRoot, 'ios'), { recursive: true });
   fs.writeFileSync(
     path.join(staticRoot, 'ios', 'manifest.json'),
@@ -156,41 +180,54 @@ test('production server serves health checks, a platform manifest, and its bundl
   });
 
   try {
-    await waitForServer(`http://127.0.0.1:${port}/status`, child);
+    const serverUrl = `http://127.0.0.1:${port}`;
+    await waitForServer(`${serverUrl}/status`, child);
 
-    const healthResponse = await fetch(`http://127.0.0.1:${port}/status`);
+    const healthResponse = await fetch(`${serverUrl}/status`);
     assert.equal(healthResponse.status, 200);
 
     const prefixedHealthResponse = await fetch(
-      `http://127.0.0.1:${port}/mobile/status`,
+      `${serverUrl}/mobile/status`,
     );
     assert.equal(prefixedHealthResponse.status, 200);
 
     const manifestResponse = await fetch(
-      `http://127.0.0.1:${port}/mobile/manifest`,
+      `${serverUrl}/mobile/manifest`,
       { headers: { 'expo-platform': 'ios' } },
     );
     assert.equal(manifestResponse.status, 200);
     assert.deepEqual(await manifestResponse.json(), manifest);
 
     const bundleResponse = await fetch(
-      `http://127.0.0.1:${port}/mobile/${bundleRelativePath}`,
+      `${serverUrl}/mobile/${bundleRelativePath}`,
     );
     assert.equal(bundleResponse.status, 200);
     assert.equal(await bundleResponse.text(), bundleContents);
 
     const androidManifestResponse = await fetch(
-      `http://127.0.0.1:${port}/mobile/manifest`,
+      `${serverUrl}/mobile/manifest`,
       { headers: { 'expo-platform': 'android' } },
     );
     assert.equal(androidManifestResponse.status, 200);
     assert.deepEqual(await androidManifestResponse.json(), androidManifest);
 
     const androidBundleResponse = await fetch(
-      `http://127.0.0.1:${port}/mobile/${androidBundleRelativePath}`,
+      `${serverUrl}/mobile/${androidBundleRelativePath}`,
     );
     assert.equal(androidBundleResponse.status, 200);
     assert.equal(await androidBundleResponse.text(), androidBundleContents);
+
+    const androidAssetUrl = new URL(
+      androidManifest.assets[0].url,
+      serverUrl,
+    );
+    const androidAssetResponse = await fetch(androidAssetUrl);
+    assert.equal(androidAssetResponse.status, 200);
+    assert.equal(androidAssetResponse.headers.get('content-type'), 'image/png');
+    assert.deepEqual(
+      Buffer.from(await androidAssetResponse.arrayBuffer()),
+      androidAssetContents,
+    );
   } finally {
     child.kill('SIGTERM');
     await once(child, 'exit');
