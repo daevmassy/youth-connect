@@ -97,6 +97,19 @@ test('production server serves health checks, a platform manifest, and its bundl
   );
   const bundleContents = 'console.log("generated iOS bundle");';
   const bundlePath = path.join(staticRoot, bundleRelativePath);
+  const androidBundleRelativePath = path.join(
+    timestamp,
+    '_expo',
+    'static',
+    'js',
+    'android',
+    'bundle.js',
+  );
+  const androidBundleContents = 'console.log("generated Android bundle");';
+  const androidBundlePath = path.join(
+    staticRoot,
+    androidBundleRelativePath,
+  );
   const manifest = {
     launchAsset: {
       key: 'bundle-test-build',
@@ -107,13 +120,27 @@ test('production server serves health checks, a platform manifest, and its bundl
       expoClient: {},
     },
   };
+  const androidManifest = {
+    ...manifest,
+    launchAsset: {
+      ...manifest.launchAsset,
+      url: `/mobile/${androidBundleRelativePath}`,
+    },
+  };
 
   fs.mkdirSync(path.dirname(bundlePath), { recursive: true });
   fs.writeFileSync(bundlePath, bundleContents);
+  fs.mkdirSync(path.dirname(androidBundlePath), { recursive: true });
+  fs.writeFileSync(androidBundlePath, androidBundleContents);
   fs.mkdirSync(path.join(staticRoot, 'ios'), { recursive: true });
   fs.writeFileSync(
     path.join(staticRoot, 'ios', 'manifest.json'),
     JSON.stringify(manifest),
+  );
+  fs.mkdirSync(path.join(staticRoot, 'android'), { recursive: true });
+  fs.writeFileSync(
+    path.join(staticRoot, 'android', 'manifest.json'),
+    JSON.stringify(androidManifest),
   );
 
   const port = await getFreePort();
@@ -151,6 +178,19 @@ test('production server serves health checks, a platform manifest, and its bundl
     );
     assert.equal(bundleResponse.status, 200);
     assert.equal(await bundleResponse.text(), bundleContents);
+
+    const androidManifestResponse = await fetch(
+      `http://127.0.0.1:${port}/mobile/manifest`,
+      { headers: { 'expo-platform': 'android' } },
+    );
+    assert.equal(androidManifestResponse.status, 200);
+    assert.deepEqual(await androidManifestResponse.json(), androidManifest);
+
+    const androidBundleResponse = await fetch(
+      `http://127.0.0.1:${port}/mobile/${androidBundleRelativePath}`,
+    );
+    assert.equal(androidBundleResponse.status, 200);
+    assert.equal(await androidBundleResponse.text(), androidBundleContents);
   } finally {
     child.kill('SIGTERM');
     await once(child, 'exit');
