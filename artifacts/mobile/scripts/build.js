@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const net = require('net');
 const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
@@ -36,6 +36,37 @@ function exitWithError(message) {
     metroProcess.kill();
   }
   process.exit(1);
+}
+
+function runExpoCompatibilityCheck() {
+  console.log('Checking Expo SDK dependency compatibility...');
+
+  const result = spawnSync('pnpm', ['-w', 'run', 'check:expo'], {
+    cwd: workspaceRoot,
+    env: {
+      ...process.env,
+      CI: '1',
+    },
+    stdio: 'inherit',
+  });
+
+  if (result.error) {
+    throw new Error(
+      `Expo dependency compatibility check could not run: ${result.error.message}`,
+    );
+  }
+
+  if (result.status !== 0) {
+    const exitCode =
+      result.status === null
+        ? `signal ${result.signal || 'unknown'}`
+        : `exit code ${result.status}`;
+    throw new Error(
+      `Expo dependency compatibility check failed (${exitCode}).`,
+    );
+  }
+
+  console.log('Expo SDK dependency compatibility check passed');
 }
 
 function setupSignalHandlers() {
@@ -602,6 +633,8 @@ async function main() {
 
   setupSignalHandlers();
 
+  runExpoCompatibilityCheck();
+
   const domain = getDeploymentDomain();
   const expoPublicReplId = getExpoPublicReplId();
   const baseUrl = `https://${domain}`;
@@ -669,4 +702,5 @@ if (require.main === module) {
 module.exports = {
   findAvailableMetroPort,
   isPortAvailable,
+  runExpoCompatibilityCheck,
 };
