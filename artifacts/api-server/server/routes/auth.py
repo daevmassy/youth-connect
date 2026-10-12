@@ -1,12 +1,32 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from passlib.context import CryptContext
+import bcrypt
+import hmac
+import os
 
 from ..database import db_cursor
 from ..auth import sign_token, require_auth
+from ..storage import request_profile_photo_upload
 
 router = APIRouter()
-pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def _password_bytes(password: str) -> bytes:
+    encoded = password.encode("utf-8")
+    if len(encoded) > 72:
+        raise HTTPException(400, "Password must be 72 bytes or fewer.")
+    return encoded
+
+
+def _hash_password(password: str) -> str:
+    return bcrypt.hashpw(_password_bytes(password), bcrypt.gensalt()).decode("utf-8")
+
+
+def _verify_password(password: str, password_hash: str) -> bool:
+    try:
+        return bcrypt.checkpw(_password_bytes(password), password_hash.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 
 class RegisterRequest(BaseModel):
@@ -22,20 +42,41 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class AdminLoginRequest(BaseModel):
+    password: str
+
+
+class ProfilePhotoUploadRequest(BaseModel):
+    name: str
+    size: int
+    contentType: str
+
+
 class UpdateProfileRequest(BaseModel):
     firstName: str | None = None
     lastName: str | None = None
     bio: str | None = None
+    avatarPath: str | None = None
 
 
 def _public_user(row: dict) -> dict:
-    return {k: v for k, v in row.items() if k != "password_hash"}
+    return {
+        "id": row["id"],
+        "firstName": row["first_name"],
+        "lastName": row["last_name"],
+        "username": row["username"],
+        "email": row["email"],
+        "bio": row.get("bio") or "",
+        "avatarUrl": f"/api/storage{row['avatar_path']}" if row.get("avatar_path") else None,
+        "createdAt": row["created_at"],
+    }
 
 
 @router.post("/auth/register", status_code=201)
 def register(body: RegisterRequest):
     if not body.password or len(body.password) < 6:
         raise HTTPException(400, "Password must be at least 6 characters.")
+    _password_bytes(body.password)
 
     email = body.email.strip().lower()
     username = body.username.strip().lower()
@@ -48,7 +89,7 @@ def register(body: RegisterRequest):
         if cur.fetchone():
             raise HTTPException(409, "An account with that email or username already exists.")
 
-    password_hash = pwd_ctx.hash(body.password)
+    password_hash = _hash_password(body.password)
 
     with db_cursor(commit=True) as cur:
         cur.execute(
@@ -73,12 +114,30 @@ def login(body: LoginRequest):
         )
         row = cur.fetchone()
 
-    if not row or not pwd_ctx.verify(body.password, row["password_hash"]):
+    if not row or not _verify_password(body.password, row["password_hash"]):
         raise HTTPException(401, "Invalid credentials.")
 
     user = dict(row)
     token = sign_token(user["id"])
     return {"token": token, "user": _public_user(user)}
+
+
+@router.post("/auth/admin-login")
+def admin_login(body: AdminLoginRequest):
+    configured_password = os.environ.get("ADMIN_PASSWORD")
+    if not configured_password:
+        raise HTTPException(503, "Admin password is not configured. Add ADMIN_PASSWORD in Replit Secrets.")
+    if not hmac.compare_digest(body.password, configured_password):
+        raise HTTPException(401, "Invalid administrator password.")
+    return {"token": sign_token(0, is_admin=True), "isAdmin": True}
+
+
+@router.post("/auth/profile-photo/request-url")
+def request_profile_photo_upload_url(
+    body: ProfilePhotoUploadRequest,
+    user_id: int = Depends(require_auth),
+):
+    return request_profile_photo_upload(body.name, body.size, body.contentType)
 
 
 @router.get("/auth/me")
@@ -100,6 +159,10 @@ def update_me(body: UpdateProfileRequest, user_id: int = Depends(require_auth)):
         updates["last_name"] = body.lastName.strip()
     if body.bio is not None:
         updates["bio"] = body.bio
+    if body.avatarPath is not None:
+        if body.avatarPath and not body.avatarPath.startswith("/objects/uploads/"):
+            raise HTTPException(400, "A valid uploaded profile photo is required.")
+        updates["avatar_path"] = body.avatarPath or None
 
     if not updates:
         with db_cursor() as cur:

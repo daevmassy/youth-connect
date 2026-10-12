@@ -1,0 +1,2 @@
+- [App Storage paths](object-storage-paths.md) — normalized `/objects/uploads/...` URLs differ from FastAPI’s captured `uploads/...` route segment.
+- [Expo dependency validation](expo-dependency-validation.md) — pair Expo’s installed-version check with a frozen workspace lockfile check to catch manifest drift.

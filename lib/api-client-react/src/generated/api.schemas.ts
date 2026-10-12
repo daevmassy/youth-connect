@@ -16,6 +16,7 @@ export interface User {
   username: string;
   email: string;
   bio?: string;
+  avatarUrl?: string | null;
   createdAt: string;
 }
 
@@ -37,11 +38,28 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   bio?: string;
+  /** Uploaded profile photo object path, or an empty string to remove it */
+  avatarPath?: string;
+}
+
+export interface ProfilePhotoUploadRequest {
+  name: string;
+  size: number;
+  contentType: string;
 }
 
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+export interface AdminLoginRequest {
+  password: string;
+}
+
+export interface AdminAuthResponse {
+  token: string;
+  isAdmin: boolean;
 }
 
 export interface UserResponse {
@@ -91,6 +109,22 @@ export interface ReadingPlan {
 
 export interface ReadingPlansResponse {
   plans: ReadingPlan[];
+}
+
+export interface ReadingPlanResponse {
+  plan: ReadingPlan;
+}
+
+export interface ReadingPlanDayInput {
+  dayNumber: number;
+  passage: string;
+  reflection?: string;
+}
+
+export interface CreateReadingPlanRequest {
+  title: string;
+  description?: string;
+  days: ReadingPlanDayInput[];
 }
 
 export interface ReadingProgressItem {
@@ -212,5 +246,40 @@ export interface SubmitQuestionRequest {
 
 export interface QuestionResponse {
   question: QuestionItem;
+}
+
+export interface MusicTrack {
+  id: number;
+  title: string;
+  artist: string;
+  duration: number;
+  audioUrl: string;
+  createdAt: string;
+}
+
+export interface MusicResponse {
+  tracks: MusicTrack[];
+}
+
+export interface MusicTrackResponse {
+  track: MusicTrack;
+}
+
+export interface CreateMusicRequest {
+  title: string;
+  artist: string;
+  duration: number;
+  audioPath: string;
+}
+
+export interface UploadUrlRequest {
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
 }
 

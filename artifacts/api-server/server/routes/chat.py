@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
 from ..database import db_cursor
-from ..auth import require_auth
+from ..auth import require_auth, require_admin
 
 router = APIRouter()
 
@@ -80,7 +80,7 @@ def list_my_questions(user_id: int = Depends(require_auth)):
 
 
 @router.get("/questions/all")
-def list_all_questions(user_id: int = Depends(require_auth)):
+def list_all_questions(user_id: int = Depends(require_admin)):
     with db_cursor() as cur:
         cur.execute("SELECT * FROM questions ORDER BY created_at DESC")
         rows = [dict(r) for r in cur.fetchall()]
@@ -103,7 +103,7 @@ def submit_question(body: SubmitQuestionRequest, user_id: int = Depends(require_
 
 
 @router.patch("/questions/{question_id}/answer")
-def answer_question(question_id: int, body: AnswerQuestionRequest, user_id: int = Depends(require_auth)):
+def answer_question(question_id: int, body: AnswerQuestionRequest, user_id: int = Depends(require_admin)):
     if not body.answer:
         raise HTTPException(400, "Answer is required.")
     with db_cursor(commit=True) as cur:

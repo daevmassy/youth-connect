@@ -40,6 +40,7 @@ def create_tables():
         bio TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT NOW() NOT NULL
     );
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_path TEXT DEFAULT '';
 
     CREATE TABLE IF NOT EXISTS devotionals (
         id SERIAL PRIMARY KEY,
@@ -123,6 +124,15 @@ def create_tables():
         answer TEXT,
         created_at TIMESTAMP DEFAULT NOW() NOT NULL,
         answered_at TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS music_tracks (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        artist TEXT NOT NULL,
+        duration INTEGER NOT NULL DEFAULT 0,
+        audio_path TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
     );
     """
     with db_cursor(commit=True) as cur:

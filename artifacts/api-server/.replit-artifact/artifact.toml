@@ -21,7 +21,7 @@ args = ["echo", "no-build-step"]
 NODE_ENV = "production"
 
 [services.production.run]
-args = ["python", "run.py"]
+args = ["python", "artifacts/api-server/run.py"]
 
 [services.production.run.env]
 PORT = "8080"

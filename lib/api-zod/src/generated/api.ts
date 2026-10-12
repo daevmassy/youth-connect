@@ -37,6 +37,7 @@ export const RegisterResponse = zod.object({
   "username": zod.string(),
   "email": zod.string(),
   "bio": zod.string().optional(),
+  "avatarUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 })
@@ -59,8 +60,22 @@ export const LoginResponse = zod.object({
   "username": zod.string(),
   "email": zod.string(),
   "bio": zod.string().optional(),
+  "avatarUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
+})
+
+
+/**
+ * @summary Sign in to the administrator area
+ */
+export const AdminLoginBody = zod.object({
+  "password": zod.string()
+})
+
+export const AdminLoginResponse = zod.object({
+  "token": zod.string(),
+  "isAdmin": zod.boolean()
 })
 
 
@@ -75,8 +90,24 @@ export const GetMeResponse = zod.object({
   "username": zod.string(),
   "email": zod.string(),
   "bio": zod.string().optional(),
+  "avatarUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
+})
+
+
+/**
+ * @summary Request a profile photo upload URL
+ */
+export const RequestProfilePhotoUploadUrlBody = zod.object({
+  "name": zod.string(),
+  "size": zod.number(),
+  "contentType": zod.string()
+})
+
+export const RequestProfilePhotoUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string()
 })
 
 
@@ -86,7 +117,8 @@ export const GetMeResponse = zod.object({
 export const UpdateMeBody = zod.object({
   "firstName": zod.string().optional(),
   "lastName": zod.string().optional(),
-  "bio": zod.string().optional()
+  "bio": zod.string().optional(),
+  "avatarPath": zod.string().optional().describe('Uploaded profile photo object path, or an empty string to remove it')
 })
 
 export const UpdateMeResponse = zod.object({
@@ -97,6 +129,7 @@ export const UpdateMeResponse = zod.object({
   "username": zod.string(),
   "email": zod.string(),
   "bio": zod.string().optional(),
+  "avatarUrl": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 })
@@ -172,6 +205,36 @@ export const ListReadingPlansResponse = zod.object({
 
 
 /**
+ * @summary Create a Bible study guide (admin)
+ */
+export const CreateReadingPlanBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "days": zod.array(zod.object({
+  "dayNumber": zod.number(),
+  "passage": zod.string(),
+  "reflection": zod.string().optional()
+}))
+})
+
+export const CreateReadingPlanResponse = zod.object({
+  "plan": zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "createdAt": zod.coerce.date(),
+  "days": zod.array(zod.object({
+  "id": zod.number(),
+  "planId": zod.number(),
+  "dayNumber": zod.number(),
+  "passage": zod.string(),
+  "reflection": zod.string().optional()
+}))
+})
+})
+
+
+/**
  * @summary Get the current user's reading progress
  */
 export const GetReadingProgressResponse = zod.object({
@@ -229,6 +292,78 @@ export const CreatePrayerBody = zod.object({
 })
 
 export const CreatePrayerResponse = zod.void()
+
+
+/**
+ * @summary List worship music
+ */
+export const ListMusicResponse = zod.object({
+  "tracks": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "artist": zod.string(),
+  "duration": zod.number(),
+  "audioUrl": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Add a worship track (admin)
+ */
+export const CreateMusicBody = zod.object({
+  "title": zod.string(),
+  "artist": zod.string(),
+  "duration": zod.number(),
+  "audioPath": zod.string()
+})
+
+export const CreateMusicResponse = zod.object({
+  "track": zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "artist": zod.string(),
+  "duration": zod.number(),
+  "audioUrl": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Delete a worship track (admin)
+ */
+export const DeleteMusicParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteMusicResponse = zod.void()
+
+
+/**
+ * @summary Request a presigned URL for an audio upload
+ */
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string(),
+  "size": zod.number(),
+  "contentType": zod.string()
+})
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string()
+})
+
+
+/**
+ * @summary Serve an uploaded audio file
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
+})
+
+export const GetStorageObjectResponse = zod.unknown()
 
 
 /**

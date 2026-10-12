@@ -22,6 +22,10 @@ tags:
     description: Youth events
   - name: chat
     description: Chat rooms and pastor questions
+  - name: music
+    description: Worship music and audio tracks
+  - name: storage
+    description: Audio file uploads and serving
 paths:
   /healthz:
     get:
@@ -75,6 +79,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
 
+  /auth/admin-login:
+    post:
+      operationId: adminLogin
+      tags: [auth]
+      summary: Sign in to the administrator area
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginRequest"
+      responses:
+        "200":
+          description: Administrator session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAuthResponse"
+        "401":
+          description: Invalid administrator password
+        "503":
+          description: Administrator password is not configured
+
   /auth/me:
     get:
       operationId: getMe
@@ -87,6 +114,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
+
+  /auth/profile-photo/request-url:
+    post:
+      operationId: requestProfilePhotoUploadUrl
+      tags: [auth]
+      summary: Request a profile photo upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfilePhotoUploadRequest"
+      responses:
+        "200":
+          description: Profile photo upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
     patch:
       operationId: updateMe
       tags: [auth]
@@ -162,6 +208,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReadingPlansResponse"
+    post:
+      operationId: createReadingPlan
+      tags: [reading-plans]
+      summary: Create a Bible study guide (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReadingPlanRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadingPlanResponse"
 
   /reading-plans/progress:
     get:
@@ -220,6 +283,92 @@ paths:
       responses:
         "201":
           description: Created
+
+  /music:
+    get:
+      operationId: listMusic
+      tags: [music]
+      summary: List worship music
+      responses:
+        "200":
+          description: Music tracks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MusicResponse"
+    post:
+      operationId: createMusic
+      tags: [music]
+      summary: Add a worship track (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMusicRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MusicTrackResponse"
+
+  /music/{id}:
+    delete:
+      operationId: deleteMusic
+      tags: [music]
+      summary: Delete a worship track (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request a presigned URL for an audio upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+
+  /storage/objects/{objectPath}:
+    get:
+      operationId: getStorageObject
+      tags: [storage]
+      summary: Serve an uploaded audio file
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audio file
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Object not found
 
   /prayers/{id}/pray:
     post:
@@ -420,6 +569,9 @@ components:
           type: string
         bio:
           type: string
+        avatarUrl:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -459,6 +611,20 @@ components:
           type: string
         bio:
           type: string
+        avatarPath:
+          type: string
+          description: Uploaded profile photo object path, or an empty string to remove it
+
+    ProfilePhotoUploadRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+      required: [name, size, contentType]
 
     AuthResponse:
       type: object
@@ -468,6 +634,22 @@ components:
         user:
           $ref: "#/components/schemas/User"
       required: [token, user]
+
+    AdminLoginRequest:
+      type: object
+      properties:
+        password:
+          type: string
+      required: [password]
+
+    AdminAuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        isAdmin:
+          type: boolean
+      required: [token, isAdmin]
 
     UserResponse:
       type: object
@@ -567,6 +749,37 @@ components:
           items:
             $ref: "#/components/schemas/ReadingPlan"
       required: [plans]
+
+    ReadingPlanResponse:
+      type: object
+      properties:
+        plan:
+          $ref: "#/components/schemas/ReadingPlan"
+      required: [plan]
+
+    ReadingPlanDayInput:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+        passage:
+          type: string
+        reflection:
+          type: string
+      required: [dayNumber, passage]
+
+    CreateReadingPlanRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadingPlanDayInput"
+      required: [title, days]
 
     ReadingProgressItem:
       type: object
@@ -798,3 +1011,71 @@ components:
         question:
           $ref: "#/components/schemas/QuestionItem"
       required: [question]
+
+    MusicTrack:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        artist:
+          type: string
+        duration:
+          type: integer
+        audioUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, artist, duration, audioUrl, createdAt]
+
+    MusicResponse:
+      type: object
+      properties:
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/MusicTrack"
+      required: [tracks]
+
+    MusicTrackResponse:
+      type: object
+      properties:
+        track:
+          $ref: "#/components/schemas/MusicTrack"
+      required: [track]
+
+    CreateMusicRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        artist:
+          type: string
+        duration:
+          type: integer
+        audioPath:
+          type: string
+      required: [title, artist, duration, audioPath]
+
+    UploadUrlRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+      required: [name, size, contentType]
+
+    UploadUrlResponse:
+      type: object
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+      required: [uploadURL, objectPath]

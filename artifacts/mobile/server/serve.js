@@ -13,7 +13,9 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const STATIC_ROOT = path.resolve(__dirname, '..', 'static-build');
+const STATIC_ROOT = path.resolve(
+  process.env.STATIC_BUILD_ROOT || path.join(__dirname, '..', 'static-build'),
+);
 const TEMPLATE_PATH = path.resolve(__dirname, 'templates', 'landing-page.html');
 const basePath = (process.env.BASE_PATH || '/').replace(/\/+$/, '');
 
@@ -82,7 +84,18 @@ function serveLandingPage(req, res, landingPageTemplate, appName) {
 }
 
 function serveStaticFile(urlPath, res) {
-  const safePath = path.normalize(urlPath).replace(/^(\.\.(\/|\\|$))+/, '');
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(urlPath);
+  } catch {
+    res.writeHead(400);
+    res.end('Bad Request');
+    return;
+  }
+
+  const safePath = path
+    .normalize(decodedPath)
+    .replace(/^(\.\.(\/|\\|$))+/, '');
   const filePath = path.join(STATIC_ROOT, safePath);
 
   if (!filePath.startsWith(STATIC_ROOT)) {
@@ -113,6 +126,12 @@ const server = http.createServer((req, res) => {
 
   if (basePath && pathname.startsWith(basePath)) {
     pathname = pathname.slice(basePath.length) || '/';
+  }
+
+  if (pathname === '/status') {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok' }));
+    return;
   }
 
   if (pathname === '/' || pathname === '/manifest') {

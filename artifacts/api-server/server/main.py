@@ -25,6 +25,17 @@ app.add_middleware(
 app.include_router(router, prefix="/api")
 
 
+def service_status():
+    return {"status": "ok", "service": "youth-connect-api"}
+
+
+@app.get("/", include_in_schema=False)
+@app.get("/api", include_in_schema=False)
+@app.get("/healthz", include_in_schema=False)
+async def root_health():
+    return service_status()
+
+
 @app.on_event("startup")
 async def startup():
     create_tables()

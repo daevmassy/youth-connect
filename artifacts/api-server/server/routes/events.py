@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from ..database import db_cursor
-from ..auth import require_auth
+from ..auth import require_auth, require_admin
 
 router = APIRouter()
 
@@ -39,7 +39,7 @@ def list_events(user_id: int = Depends(require_auth)):
 
 
 @router.post("/events", status_code=201)
-def create_event(body: CreateEventRequest, user_id: int = Depends(require_auth)):
+def create_event(body: CreateEventRequest, user_id: int = Depends(require_admin)):
     if not body.title or not body.startsAt:
         raise HTTPException(400, "Title and start date are required.")
     try:

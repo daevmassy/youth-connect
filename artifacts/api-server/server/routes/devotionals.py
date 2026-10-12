@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
 from ..database import db_cursor
-from ..auth import require_auth
+from ..auth import require_auth, require_admin
 
 router = APIRouter()
 
@@ -24,7 +24,7 @@ def list_devotionals(user_id: int = Depends(require_auth)):
 
 
 @router.post("/devotionals", status_code=201)
-def create_devotional(body: CreateDevotionalRequest, user_id: int = Depends(require_auth)):
+def create_devotional(body: CreateDevotionalRequest, user_id: int = Depends(require_admin)):
     if not body.title or not body.scriptureRef or not body.scriptureText or not body.body:
         raise HTTPException(400, "Missing required fields.")
     with db_cursor(commit=True) as cur:
@@ -38,7 +38,7 @@ def create_devotional(body: CreateDevotionalRequest, user_id: int = Depends(requ
 
 
 @router.delete("/devotionals/{devotional_id}", status_code=204)
-def delete_devotional(devotional_id: int, user_id: int = Depends(require_auth)):
+def delete_devotional(devotional_id: int, user_id: int = Depends(require_admin)):
     with db_cursor(commit=True) as cur:
         cur.execute("DELETE FROM devotionals WHERE id = %s", (devotional_id,))
 

@@ -6,6 +6,7 @@ from .reading_plans import router as reading_plans_router
 from .prayers import router as prayers_router
 from .events import router as events_router
 from .chat import router as chat_router
+from .music import router as music_router
 
 router = APIRouter()
 router.include_router(health_router)
@@ -15,3 +16,4 @@ router.include_router(reading_plans_router)
 router.include_router(prayers_router)
 router.include_router(events_router)
 router.include_router(chat_router)
+router.include_router(music_router)
